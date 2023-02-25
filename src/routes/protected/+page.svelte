@@ -19,11 +19,9 @@
 
 	let items: Field[] = [];
 
-	$: if (browser) {
-		getOrders({ view: selected }).then((res) => {
-			items = res;
-		});
-	}
+	$: getOrders({ view: selected }).then((res) => {
+		items = res;
+	});
 </script>
 
 <nav class="flex items-center gap-x-2 bg-slate-700">
