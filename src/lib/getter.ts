@@ -1,12 +1,16 @@
+import { browser } from '$app/environment';
 import { Fetcher } from 'openapi-typescript-fetch';
 import type { paths } from './api';
 
-const fetcher = Fetcher.for<paths>();
-fetcher.configure({ baseUrl: 'https://baserow.gofflab.org' });
+let fetcher: ReturnType<typeof Fetcher.for<paths>>;
+
+if (browser) {
+	fetcher = Fetcher.for<paths>();
+	fetcher.configure({ baseUrl: 'https://baserow.gofflab.org' });
+}
 
 const tables = { orders: 419, vendors: 421, items: 420, grants: 426 };
 const views = { new: 1780, ordered: 1781, received: 1783 };
-const rowsGetter = fetcher.path('/api/database/views/grid/{view_id}/').method('get').create();
 const fields: Record<string, string> = {};
 
 type StrNull = string | null;
@@ -44,7 +48,7 @@ export async function getOrders({
 	if (!Object.keys(fields).length) {
 		await getFields();
 	}
-
+	const rowsGetter = fetcher.path('/api/database/views/grid/{view_id}/').method('get').create();
 	const res = await rowsGetter({ view_id: views[view], page, size });
 	const out = res.data.results;
 	console.log(out[0]);
