@@ -82,31 +82,26 @@
 				) as string
 			];
 
+		const toSend = {
+			Item: [clicked.id],
+			Quantity: quantity,
+			'Unit Price': unitPrice,
+			Notes: notes,
+			Confirmation: confirmation,
+			Grant: grant ? [grant[1]] : [],
+			'Supplier Cat #': supplierCat,
+			Requestor: req
+		};
+
+		if (supplier) {
+			toSend.Supplier = [supplier.id];
+		}
+
 		if (typeof orderId === 'number') {
-			await updateOrder({
-				id: orderId,
-				Item: [clicked.id],
-				Quantity: quantity,
-				'Unit Price': unitPrice,
-				Notes: notes,
-				Confirmation: confirmation,
-				Grant: grant ? [grant[1]] : [],
-				Supplier: supplier ? [supplier.id] : [],
-				'Supplier Cat #': supplierCat
-			});
+			toSend.id = orderId;
+			await updateOrder(toSend);
 		} else {
-			await submitOrder({
-				// @ts-ignore
-				Item: [clicked.id],
-				Quantity: quantity,
-				'Unit Price': unitPrice,
-				Notes: notes,
-				Confirmation: confirmation,
-				Grant: grant ? [grant[1]] : [],
-				Supplier: supplier ? [supplier.id] : [],
-				'Supplier Cat #': supplierCat,
-				Requestor: [req]
-			});
+			await submitOrder(toSend);
 		}
 		dispatch('submit');
 	}

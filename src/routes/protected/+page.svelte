@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { XMark } from '@steeze-ui/heroicons';
+	import { Icon } from '@steeze-ui/svelte-icon';
 	import { slide } from 'svelte/transition';
 	import Edit from '../../components/Edit.svelte';
 	import Modal from '../../components/Modal.svelte';
-	import type { OrderField } from '../../lib/getter';
-	import { getOrders, test_auth } from '../../lib/getter';
+	import { deleteRow, getOrders, test_auth, type OrderField } from '../../lib/getter';
 	import { classes, nullish, usd } from '../../lib/utils';
 
 	const token = localStorage.getItem('token');
@@ -102,6 +103,7 @@
 					Submitted
 				{/if}
 			</div>
+			<div class="flex-[1]" />
 		</div>
 
 		<div
@@ -147,6 +149,18 @@
 						{:else}
 							{item.Created}
 						{/if}
+					</div>
+					<div
+						class="flex-[1]"
+						on:click={async () => {
+							await deleteRow('orders', item.id);
+							refresh(selected);
+						}}
+					>
+						<Icon
+							src={XMark}
+							class="h-4 w-4 cursor-pointer stroke-gray-700 stroke-[1.5] hover:stroke-2"
+						/>
 					</div>
 				</div>
 			{/each}

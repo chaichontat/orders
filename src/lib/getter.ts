@@ -201,3 +201,11 @@ export async function getNameKeys() {
 	await getFields('orders');
 	return nameKey;
 }
+
+export async function deleteRow(table: keyof typeof tables, id: number) {
+	const deleteRow = fetcher
+		.path('/api/database/rows/table/{table_id}/{row_id}/')
+		.method('delete')
+		.create();
+	return await deleteRow({ table_id: tables[table], row_id: id });
+}
