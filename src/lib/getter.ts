@@ -1,5 +1,5 @@
 import { browser } from '$app/environment';
-import { Fetcher } from 'openapi-typescript-fetch';
+import { Fetcher, type ApiResponse } from 'openapi-typescript-fetch';
 import type { paths } from './api';
 
 let fetcher: ReturnType<typeof Fetcher.for<paths>>;
@@ -36,8 +36,8 @@ export type OrderField = {
 	'Date Received': StrNull;
 	Item: LinkNull;
 	Price: StrNull;
-	'Cat #': LinkNull;
-	Link: LinkNull;
+	'Cat #': StrNull;
+	Link: StrNull;
 	Unit: LinkNull;
 	Requestor: { id: number; value: string };
 	Vendor: LinkNull;
@@ -162,27 +162,32 @@ export async function getRow(
 	return res.data as unknown as typeof table extends 'orders' ? OrderField : ItemField;
 }
 
-export async function submitOrder(order: Partial<OrderField>) {
+export async function submitRow(table: keyof typeof tables, order: Partial<OrderField>) {
 	const submitOrder = fetcher
 		.path('/api/database/rows/table/{table_id}/')
 		.method('post')
 		.create({});
 
 	return await submitOrder({
-		table_id: tables.orders,
-		...(await convertBack(order, 'orders'))
+		table_id: tables[table],
+		...(await convertBack(order, table))
 	});
 }
 
-export async function updateOrder(order: Partial<OrderField>) {
+export async function updateRow(table: 'orders', order: Partial<OrderField>);
+export async function updateRow(table: 'items', order: Partial<ItemField>);
+export async function updateRow(
+	table: keyof typeof tables,
+	order: Partial<OrderField> | Partial<ItemField>
+) {
 	const updateOrder = fetcher
 		.path('/api/database/rows/table/{table_id}/{row_id}/')
 		.method('patch')
 		.create({});
 	return await updateOrder({
-		table_id: tables.orders,
+		table_id: tables[table],
 		row_id: order.id,
-		...(await convertBack(order, 'orders'))
+		...(await convertBack(order, table))
 	});
 }
 

@@ -3,8 +3,8 @@
 		getGrants,
 		getNameKeys,
 		getRow,
-		submitOrder,
-		updateOrder,
+		submitRow,
+		updateRow,
 		type ItemField
 	} from '$lib/getter';
 	import { nullish, usd } from '$lib/utils';
@@ -19,16 +19,18 @@
 	let quantity = '1';
 	let unitPrice = '0';
 
+	let touchedName = false;
 	const dispatch = createEventDispatcher();
 
 	let clicked: ItemField | undefined;
-	let vendor = '';
+	let vendor: { id: number; value: string } | undefined;
 	let supplier: { id: number; Name: string } | undefined;
 	let supplierCat = '';
 	let cat = '';
 	let link = '';
 	let notes = '';
 	let confirmation = '';
+	let vendorName = '';
 	let supplierName = '';
 	let grantName = '';
 
@@ -40,37 +42,44 @@
 			clicked = await getRow('items', res.Item[0].id);
 			itemSearch = nullish(res.Item);
 			cat = nullish(res['Cat #']);
-			vendor = nullish(res.Vendor);
+			vendor = res.Vendor;
+			vendorName = nullish(res.Vendor);
 			link = nullish(res.Link);
 			quantity = res.Quantity ?? '';
 			unitPrice = res['Unit Price'] ?? '';
 			notes = res.Notes ?? '';
 			confirmation = res.Confirmation ?? '';
 			supplierCat = res['Supplier Cat'] ?? '';
+			supplier = res.Supplier;
 			supplierName = nullish(res.Supplier);
+			grantName = nullish(res.Grant);
 		}
 	});
 
-	async function processClick(c: number) {
-		clicked = await getRow('items', c);
+	async function processClick(c: { id: number }) {
+		clicked = await getRow('items', c.id);
 		itemSearch = clicked.Name ?? '';
 		cat = clicked['Cat #'] ?? '';
-		vendor = nullish(clicked.Vendor);
+		vendor = clicked.Vendor;
+		vendorName = nullish(clicked.Vendor);
 		link = clicked.Link ?? '';
 	}
 
-	async function processVendor(v: { id: number; Name: string }) {
-		console.log(v);
-
-		supplier = v;
-		supplierName = v.Name;
+	async function processVendor(v: { id: number; Name: string }, type: 'vendor' | 'supplier') {
+		if (type === 'vendor') {
+			vendor = v;
+			vendorName = v.Name;
+		} else {
+			supplier = v;
+			supplierName = v.Name;
+		}
 	}
 
 	async function handleSubmit() {
 		console.log(grantName);
 		const grant = (await getGrants()).find((g) => g[0] === grantName);
 
-		if (!clicked) {
+		if (!itemSearch) {
 			alert('Please select an item');
 			return;
 		}
@@ -83,7 +92,6 @@
 			];
 
 		const toSend = {
-			Item: [clicked.id],
 			Quantity: quantity,
 			'Unit Price': unitPrice,
 			Notes: notes,
@@ -93,15 +101,33 @@
 			Requestor: req
 		};
 
-		if (supplier) {
+		if (clicked) {
+			toSend.Item = [clicked.id];
+		} else {
+			if (!vendor) {
+				alert('Please select a vendor');
+				return;
+			}
+
+			const resp = await submitRow('items', {
+				Name: itemSearch,
+				'Cat #': cat,
+				Vendor: [vendor.id],
+				Link: link
+			});
+			const newItemId = resp.data.id;
+			toSend.Item = [newItemId];
+		}
+
+		if (supplier?.id) {
 			toSend.Supplier = [supplier.id];
 		}
 
 		if (typeof orderId === 'number') {
 			toSend.id = orderId;
-			await updateOrder(toSend);
+			await updateRow('orders', toSend);
 		} else {
-			await submitOrder(toSend);
+			await submitRow('orders', toSend);
 		}
 		dispatch('submit');
 	}
@@ -117,9 +143,9 @@
 			type="items"
 			bind:value={itemSearch}
 			on:click={(ev) => processClick(ev.detail)}
+			on:change={() => (touchedName = true)}
 			let:item
 			clicked={orderId}
-			red
 		>
 			<th
 				scope="row"
@@ -136,20 +162,41 @@
 			>
 		</SearchItem>
 
-		<Textbox bind:value={cat} label="Cat #" />
-		<Textbox bind:value={vendor} label="Vendor" />
-		<Textbox bind:value={link} label="Link" />
+		<Textbox bind:value={cat} label="Cat #" disabled={!touchedName} />
+
+		<SearchItem
+			label="Vendor"
+			type="vendors"
+			on:click={(ev) => processVendor(ev.detail, 'vendor')}
+			value={vendorName}
+			clicked={vendor?.id}
+			let:item
+			strict
+			disabled={!touchedName}
+		>
+			<td
+				class="max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap py-1.5 pl-1 pr-3 text-left text-gray-900"
+			>
+				{item.Name}
+			</td>
+		</SearchItem>
+
+		<Textbox bind:value={link} label="Link" disabled={!touchedName} />
 	</div>
 
 	<h3>Order</h3>
 	<div class=" max-w-xl">
-		<div class="flex items-center gap-x-2">
-			<Textbox label="Quantity" type="number" bind:value={quantity} />
-			×
-			<Textbox label="Unit Price" type="number" bind:value={unitPrice} />
-			=
+		<div class="grid grid-cols-3 items-center gap-x-2">
+			<div class="col-span-2 flex items-center gap-x-2">
+				<Textbox label="Quantity" type="number" bind:value={quantity} />
+				×
+				<Textbox label="Unit Price" type="number" bind:value={unitPrice} />
+				=
+			</div>
 			<span class="text-xl font-medium">
-				{usd(Number(quantity) * Number(unitPrice))}
+				{usd(Number(quantity) * Number(unitPrice))
+					? usd(Number(quantity) * Number(unitPrice))
+					: '$0.00'}
 			</span>
 		</div>
 
@@ -164,7 +211,6 @@
 				{#await getGrants() then grants}
 					<option />
 					{#each grants as grant}
-						<!-- content here -->
 						<option>{grant[0]}</option>
 					{/each}
 				{/await}
@@ -174,10 +220,11 @@
 		<SearchItem
 			label="Supplier"
 			type="vendors"
-			on:click={(ev) => processVendor(ev.detail)}
-			bind:value={supplierName}
+			on:click={(ev) => processVendor(ev.detail, 'supplier')}
+			value={supplierName}
+			clicked={supplier?.id}
 			let:item
-			red
+			strict
 		>
 			<td
 				class="max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap py-1.5 pl-1 pr-3 text-left text-gray-900"

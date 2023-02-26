@@ -9,9 +9,10 @@
 	export let placeholder = '';
 	export { cl as class };
 	export let textClass = 'bg-gray-50';
+	export let disabled = false;
 
 	let _textClass =
-		'bg-gray-50 block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500';
+		'bg-gray-50 block w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100';
 	let cl = 'mb-6';
 
 	let uid = Math.random().toString(36).slice(2, 9);
@@ -34,8 +35,13 @@
 			required
 			id={uid}
 			bind:value
+			on:blur={() => dispatch('blur')}
+			on:keydown={() => dispatch('keydown')}
+			on:input={() => dispatch('input')}
+			on:paste={() => dispatch('paste')}
 			on:keypress={() => dispatch('change', { value })}
 			{placeholder}
+			{disabled}
 		/>
 	{:else if type === 'password'}
 		<input
@@ -46,8 +52,13 @@
 			required
 			id={uid}
 			bind:value
+			on:blur={() => dispatch('blur')}
+			on:keydown={() => dispatch('keydown')}
+			on:input={() => dispatch('input')}
+			on:paste={() => dispatch('paste')}
 			on:keypress={() => dispatch('change', { value })}
 			{placeholder}
+			{disabled}
 		/>
 	{:else if type === 'number'}
 		<input
@@ -58,8 +69,13 @@
 			required
 			id={uid}
 			bind:value
+			on:blur={() => dispatch('blur')}
+			on:keydown={() => dispatch('keydown')}
+			on:input={() => dispatch('input')}
+			on:paste={() => dispatch('paste')}
 			on:keypress={() => dispatch('change', { value })}
 			{placeholder}
+			{disabled}
 		/>
 	{/if}
 </div>

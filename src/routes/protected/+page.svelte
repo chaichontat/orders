@@ -6,7 +6,7 @@
 	import { slide } from 'svelte/transition';
 	import Edit from '../../components/Edit.svelte';
 	import Modal from '../../components/Modal.svelte';
-	import { deleteRow, getOrders, test_auth, updateOrder, type OrderField } from '../../lib/getter';
+	import { deleteRow, getOrders, test_auth, updateRow, type OrderField } from '../../lib/getter';
 	import { classes, nullish, usd } from '../../lib/utils';
 
 	const token = localStorage.getItem('token');
@@ -38,7 +38,7 @@
 	$: isOpen = clicked !== undefined;
 </script>
 
-<nav class="flex items-center gap-x-2 bg-slate-700">
+<nav class="fixed top-0 left-0 flex w-full items-center gap-x-2 bg-slate-700">
 	<div class="h-14 w-14 bg-orange-600" />
 	<section class="flex flex-wrap p-2 text-sm text-gray-400">
 		<button
@@ -80,7 +80,7 @@
 				const date = new Date().toISOString().slice(0, 10);
 				for (const [i, item] of items.entries()) {
 					if (checked[i]) {
-						await updateOrder({ id: item.id, 'Date Received': date });
+						await updateRow('orders', { id: item.id, 'Date Received': date });
 					}
 				}
 				refresh(selected);
@@ -93,7 +93,7 @@
 <aside class="fixed top-0 left-0 flex h-full w-48 flex-col bg-slate-600">
 </aside> -->
 
-<main class="bg-neutral-100">
+<main class="mt-16 bg-neutral-100">
 	<section class="p-4">
 		<div
 			class="header text-semibold flex h-8 flex-shrink-0 items-center justify-between gap-x-3 px-1 pr-3 text-xs"

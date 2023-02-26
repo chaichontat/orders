@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { getView, tables, type ItemField } from '$lib/getter';
-	import { classes, clickOutside } from '$lib/utils';
+	import { clickOutside } from '$lib/utils';
 	import { Popover, PopoverPanel } from '@rgossiaux/svelte-headlessui';
 	import { throttle } from 'lodash-es';
 	import { createEventDispatcher } from 'svelte';
@@ -9,9 +9,10 @@
 
 	export let label: string;
 	export let value = '';
-	export let clicked: number | undefined = undefined;
+	export let clicked: ItemField | undefined = undefined;
 	export let type: keyof typeof tables;
-	export let red = false;
+	export let strict = false;
+	export let disabled = false;
 
 	const dispatch = createEventDispatcher();
 	const searcher = throttle((name: string) => (searchResult = getView(name, type)), 50);
@@ -19,8 +20,8 @@
 
 	function handleClick(item: ItemField) {
 		changing = false;
-		clicked = item.id;
-		dispatch('click', clicked);
+		clicked = item;
+		dispatch('click', item);
 	}
 
 	function clearClicked() {
@@ -38,8 +39,11 @@
 	<Textbox
 		{label}
 		bind:value
-		on:change={() => (changing = true)}
-		textClass={red && clicked === undefined ? 'border-red-400' : ''}
+		on:change={() => {
+			changing = true;
+			dispatch('change', value);
+		}}
+		{disabled}
 	/>
 
 	{#if changing}
@@ -56,9 +60,6 @@
 									<tr
 										class="rounded border-b hover:bg-neutral-100"
 										on:click={() => handleClick(item)}
-										on:input={clearClicked}
-										on:keydown={clearClicked}
-										on:paste={clearClicked}
 									>
 										<slot {item} />
 									</tr>
