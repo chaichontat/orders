@@ -2,10 +2,11 @@
 	import { goto } from '$app/navigation';
 	import { XMark } from '@steeze-ui/heroicons';
 	import { Icon } from '@steeze-ui/svelte-icon';
+	import { flip } from 'svelte/animate';
 	import { slide } from 'svelte/transition';
 	import Edit from '../../components/Edit.svelte';
 	import Modal from '../../components/Modal.svelte';
-	import { deleteRow, getOrders, test_auth, type OrderField } from '../../lib/getter';
+	import { deleteRow, getOrders, test_auth, updateOrder, type OrderField } from '../../lib/getter';
 	import { classes, nullish, usd } from '../../lib/utils';
 
 	const token = localStorage.getItem('token');
@@ -72,9 +73,18 @@
 	<button class="button blue" on:click={() => (clicked = 'new')}> Add Request </button>
 	<div class="flex-grow" />
 
-	{#if checked.some((c) => c)}
+	{#if checked.some((c) => c) && selected === 'ordered'}
 		<button
 			class="button mr-4 bg-purple-500 text-white transition-colors duration-75 hover:bg-purple-600 focus:ring-purple-300"
+			on:click={async () => {
+				const date = new Date().toISOString().slice(0, 10);
+				for (const [i, item] of items.entries()) {
+					if (checked[i]) {
+						await updateOrder({ id: item.id, 'Date Received': date });
+					}
+				}
+				refresh(selected);
+			}}
 			transition:slide>Mark Received</button
 		>
 	{/if}
@@ -109,8 +119,11 @@
 		<div
 			class="listing flex min-w-min flex-grow flex-col overflow-hidden rounded-lg border text-sm text-gray-700"
 		>
-			{#each items as item, i}
-				<div class="row flex flex-shrink-0 items-center justify-between gap-x-3 py-5 px-1 pr-3">
+			{#each items as item, i (item.id)}
+				<div
+					class="row flex flex-shrink-0 items-center justify-between gap-x-3 py-5 px-1 pr-3"
+					animate:flip={{ duration: 250 }}
+				>
 					<div class="ml-2 -mr-1 flex-[1]">
 						<input type="checkbox" bind:checked={checked[i]} />
 					</div>
