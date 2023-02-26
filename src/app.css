@@ -24,8 +24,25 @@
 }
 @tailwind components;
 @layer components {
+	.button {
+		@apply rounded-lg px-5 py-2.5 text-center text-sm font-medium focus:outline-none focus:ring-4 sm:w-auto;
+	}
+
+	.blue {
+		@apply bg-blue-600 text-white transition-colors duration-75 hover:bg-blue-700 focus:ring-blue-300;
+	}
+
+	.blue-grad {
+		@apply bg-gradient-to-br from-sky-500 to-blue-600  text-white focus:ring-blue-300;
+	}
 }
 
 @tailwind utilities;
 @layer utilities {
+	.clamp {
+		@apply overflow-hidden;
+		display: -webkit-box;
+		-webkit-line-clamp: 3;
+		-webkit-box-orient: vertical;
+	}
 }

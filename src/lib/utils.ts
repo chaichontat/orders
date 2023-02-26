@@ -15,3 +15,19 @@ export function usd(value: number | string | null): string {
 export function nullish(value: { id: number; value: string }[] | null): string {
 	return !value ? '' : value[0]?.value ?? '';
 }
+
+export function clickOutside(node: HTMLElement, f?: () => void) {
+	const handleClick = (event: MouseEvent) => {
+		if (node && !node.contains(event.target) && !event.defaultPrevented) {
+			f ? f() : node.dispatchEvent(new CustomEvent('outclick'));
+		}
+	};
+
+	document.addEventListener('click', handleClick, true);
+
+	return {
+		destroy() {
+			document.removeEventListener('click', handleClick, true);
+		}
+	};
+}

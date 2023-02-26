@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import type { Field } from '../../lib/getter';
+	import { slide } from 'svelte/transition';
+	import Edit from '../../components/Edit.svelte';
+	import Modal from '../../components/Modal.svelte';
+	import type { OrderField } from '../../lib/getter';
 	import { getOrders, test_auth } from '../../lib/getter';
 	import { classes, nullish, usd } from '../../lib/utils';
 
@@ -17,11 +20,20 @@
 
 	let selected: 'new' | 'ordered' | 'received' = 'new';
 
-	let items: Field[] = [];
+	let items: OrderField[] = [];
+	let checked: boolean[] = [];
+	let clicked: number | undefined | 'new';
 
-	$: getOrders({ view: selected }).then((res) => {
-		items = res;
-	});
+	function refresh(sel: typeof selected) {
+		getOrders({ view: sel }).then((res) => {
+			checked = new Array(res.length).fill(false);
+			items = res;
+		});
+	}
+
+	$: refresh(selected);
+
+	$: isOpen = clicked !== undefined;
 </script>
 
 <nav class="flex items-center gap-x-2 bg-slate-700">
@@ -34,8 +46,9 @@
 					? 'text-semibold border-neutral-200 bg-slate-500 text-white'
 					: 'border-neutral-400 hover:bg-slate-600'
 			)}
-			on:click={() => (selected = 'new')}>New</button
-		>
+			on:click={() => (selected = 'new')}
+			>New
+		</button>
 		<button
 			class={classes(
 				'border-y border-neutral-400 p-2 px-4',
@@ -55,11 +68,15 @@
 			on:click={() => (selected = 'received')}>Received</button
 		>
 	</section>
-	<button
-		class=" rounded-lg bg-sky-500 px-4 py-2 text-sm text-neutral-100 transition-colors duration-100 hover:bg-sky-600 active:bg-sky-700"
-	>
-		Add Request
-	</button>
+	<button class="button blue" on:click={() => (clicked = 'new')}> Add Request </button>
+	<div class="flex-grow" />
+
+	{#if checked.some((c) => c)}
+		<button
+			class="button mr-4 bg-purple-500 text-white transition-colors duration-75 hover:bg-purple-600 focus:ring-purple-300"
+			transition:slide>Mark Received</button
+		>
+	{/if}
 </nav>
 <!--
 <aside class="fixed top-0 left-0 flex h-full w-48 flex-col bg-slate-600">
@@ -70,26 +87,35 @@
 		<div
 			class="header text-semibold flex h-8 flex-shrink-0 items-center justify-between gap-x-3 px-1 pr-3 text-xs"
 		>
-			<div class="ml-2 -mr-1 flex-[1]"><input type="checkbox" /></div>
+			<div class="ml-2 -mr-1 flex-[1]" />
 			<div class="flex-[12]">Item Name</div>
 			<div class="flex-[6]">Vendor</div>
 			<div class="flex-[5]">Total</div>
 			<div class="flex-[6]">Grant</div>
 			<div class="flex-[5]">From</div>
-			<div class="flex-[4]">Submitted</div>
+			<div class="flex-[4]">
+				{#if selected === 'ordered'}
+					Ordered
+				{:else if selected === 'received'}
+					Received
+				{:else}
+					Submitted
+				{/if}
+			</div>
 		</div>
 
 		<div
 			class="listing flex min-w-min flex-grow flex-col overflow-hidden rounded-lg border text-sm text-gray-700"
 		>
-			{#each items as item}
+			{#each items as item, i}
 				<div class="row flex flex-shrink-0 items-center justify-between gap-x-3 py-5 px-1 pr-3">
 					<div class="ml-2 -mr-1 flex-[1]">
-						<input type="checkbox" />
+						<input type="checkbox" bind:checked={checked[i]} />
 					</div>
 					<div class="flex-[12]">
 						<div
-							class="clamp cursor-pointer overflow-hidden underline decoration-sky-300 decoration-dotted underline-offset-4"
+							class="clamp cursor-pointer underline decoration-sky-300 decoration-dotted underline-offset-4"
+							on:click={() => (clicked = item.id)}
 						>
 							{nullish(item.Item)}
 						</div>
@@ -113,13 +139,63 @@
 					<div class="flex-[5] text-neutral-600">
 						{item['Requestor'] ? item['Requestor'].value : ''}
 					</div>
-					<div class="flex-[4] text-neutral-600">{item.Created}</div>
+					<div class="flex-[4] text-neutral-600">
+						{#if selected === 'ordered'}
+							{item['Date Ordered']}
+						{:else if selected === 'received'}
+							{item['Date Received']}
+						{:else}
+							{item.Created}
+						{/if}
+					</div>
 				</div>
 			{/each}
 		</div>
 	</section>
 </main>
 
+<Modal bind:showModal={clicked}>
+	{#if clicked}
+		<Edit
+			on:submit={() => {
+				clicked = undefined;
+				refresh(selected);
+			}}
+			orderId={clicked === 'new' ? undefined : clicked}
+		/>
+	{/if}
+</Modal>
+
+<!-- <Transition
+	show={isOpen}
+	enter="transition duration-100 ease-out"
+	enterFrom="transform scale-95 opacity-0"
+	enterTo="transform scale-100 opacity-100"
+	leave="transition duration-75 ease-out"
+	leaveFrom="transform scale-100 opacity-100"
+	leaveTo="transform scale-95 opacity-0"
+>
+	<Dialog open={isOpen} on:close={() => (isOpen = false)}>
+		<DialogOverlay
+			style={'position: fixed; top: 0; left: 0; background-color: rgb(0 0 0); opacity: 0.3;'}
+		/>
+
+		<span class="inline-block h-screen align-middle" aria-hidden="true">​</span>
+		<div
+			class="my-8 inline-block w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all"
+		>
+			<DialogTitle>Deactivate account</DialogTitle>
+			<DialogDescription>This will permanently deactivate your account</DialogDescription>
+			<p>
+				Are you sure you want to deactivate your account? All of your data will be permanently
+				removed. This action cannot be undone.
+			</p>
+
+			<button on:click={() => (isOpen = false)}>Deactivate</button>
+			<button on:click={() => (isOpen = false)}>Cancel</button>
+		</div>
+	</Dialog>
+</Transition> -->
 <style lang="postcss">
 	tr:nth-child(even) {
 		@apply bg-white hover:bg-neutral-50;
@@ -150,11 +226,5 @@
 
 	input[type='checkbox'] {
 		@apply cursor-pointer rounded bg-transparent;
-	}
-
-	.clamp {
-		display: -webkit-box;
-		-webkit-line-clamp: 3;
-		-webkit-box-orient: vertical;
 	}
 </style>
