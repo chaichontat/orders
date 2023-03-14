@@ -20,6 +20,7 @@ let nameKey: Record<string, number> = {};
 
 const views = { new: 1780, ordered: 1781, received: 1783 };
 let grants: [string, number][] = [];
+const vendors: Record<string, number> = {};
 
 export type StrNull = string | null;
 export type LinkNull = { id: number; value: string }[] | null;
@@ -95,6 +96,25 @@ export async function getOrders({
 	return convertFields(out, 'orders');
 }
 
+export async function getTable(table: keyof typeof tables) {
+	const rowsGetter = fetcher.path('/api/database/rows/table/{table_id}/').method('get').create();
+	const res = await rowsGetter({ table_id: tables[table] });
+	const out = res.data.results;
+	return convertFields(out, table);
+}
+
+export async function getVendors() {
+	if (!Object.keys(vendors).length) {
+		const out = await getTable('vendors');
+		for (const row of out) {
+			if (!row.Name) continue;
+			vendors[row.Name] = row.id;
+		}
+	}
+
+	return vendors;
+}
+
 export async function login(email: string, password: string) {
 	const getAuth = fetcher.path('/api/user/token-auth/').method('post').create();
 	return await getAuth({ email, password });
@@ -130,9 +150,11 @@ async function getFields(table: keyof typeof tables) {
 }
 
 async function convertBack(row: Partial<OrderField>, type: keyof typeof tables) {
-	console.log(row);
+	if (!Object.keys(fields[type]).length) {
+		await getFields(type);
+	}
 
-	const out: Record<string, any> = {};
+	const out: Record<string, unknown> = {};
 	for (const [id, name] of Object.entries(fields[type])) {
 		if (row[name] === undefined) continue;
 		out[id] = row[name];
@@ -178,16 +200,16 @@ export async function updateRow(table: 'orders', order: Partial<OrderField>);
 export async function updateRow(table: 'items', order: Partial<ItemField>);
 export async function updateRow(
 	table: keyof typeof tables,
-	order: Partial<OrderField> | Partial<ItemField>
+	field: Partial<OrderField> | Partial<ItemField>
 ) {
-	const updateOrder = fetcher
+	const _update = fetcher
 		.path('/api/database/rows/table/{table_id}/{row_id}/')
 		.method('patch')
 		.create({});
-	return await updateOrder({
+	return await _update({
 		table_id: tables[table],
-		row_id: order.id,
-		...(await convertBack(order, table))
+		row_id: field.id,
+		...(await convertBack(field, table))
 	});
 }
 

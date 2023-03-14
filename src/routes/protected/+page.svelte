@@ -2,8 +2,9 @@
 	import { goto } from '$app/navigation';
 	import { XMark } from '@steeze-ui/heroicons';
 	import { Icon } from '@steeze-ui/svelte-icon';
+	import { onMount } from 'svelte';
 	import { flip } from 'svelte/animate';
-	import { slide } from 'svelte/transition';
+	import { fade, slide } from 'svelte/transition';
 	import Edit from '../../components/Edit.svelte';
 	import Modal from '../../components/Modal.svelte';
 	import { deleteRow, getOrders, test_auth, updateRow, type OrderField } from '../../lib/getter';
@@ -32,6 +33,10 @@
 			items = res;
 		});
 	}
+
+	const waiter = new Promise((resolve) => {
+		setTimeout(resolve, 500);
+	});
 
 	$: refresh(selected);
 
@@ -122,7 +127,8 @@
 			{#each items as item, i (item.id)}
 				<div
 					class="row flex flex-shrink-0 items-center justify-between gap-x-3 py-5 px-1 pr-3"
-					animate:flip={{ duration: 250 }}
+					transition:fade={{ duration: 200 }}
+					animate:flip={{ duration: 200 }}
 				>
 					<div class="ml-2 -mr-1 flex-[1]">
 						<input type="checkbox" bind:checked={checked[i]} />
@@ -179,6 +185,18 @@
 			{/each}
 		</div>
 	</section>
+
+	{#await waiter then value}
+		{#if !items.length}
+			<div
+				class="mt-4 flex flex-col items-center justify-center text-center leading-relaxed"
+				transition:fade
+			>
+				<span class="text-3xl font-extralight tracking-wider"> It's empty. </span>
+				<span class="mt-2 text-xl">Congratulations! 🎉</span>
+			</div>
+		{/if}
+	{/await}
 </main>
 
 <Modal bind:showModal={clicked}>

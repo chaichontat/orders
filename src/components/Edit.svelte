@@ -3,11 +3,15 @@
 		getGrants,
 		getNameKeys,
 		getRow,
+		getTable,
+		getVendors,
 		submitRow,
 		updateRow,
 		type ItemField
 	} from '$lib/getter';
 	import { nullish, usd } from '$lib/utils';
+	import { XMark } from '@steeze-ui/heroicons';
+	import { Icon } from '@steeze-ui/svelte-icon';
 
 	import { createEventDispatcher, onMount } from 'svelte';
 	import SearchItem from './SearchItem.svelte';
@@ -22,9 +26,7 @@
 	let touchedName = false;
 	const dispatch = createEventDispatcher();
 
-	let clicked: ItemField | undefined;
-	let vendor: { id: number; value: string } | undefined;
-	let supplier: { id: number; Name: string } | undefined;
+	let itemClicked: ItemField | undefined;
 	let supplierCat = '';
 	let cat = '';
 	let link = '';
@@ -39,10 +41,9 @@
 			const res = await getRow('orders', orderId);
 			console.log(res);
 
-			clicked = await getRow('items', res.Item[0].id);
+			itemClicked = await getRow('items', res.Item[0].id);
 			itemSearch = nullish(res.Item);
 			cat = nullish(res['Cat #']);
-			vendor = res.Vendor;
 			vendorName = nullish(res.Vendor);
 			link = nullish(res.Link);
 			quantity = res.Quantity ?? '';
@@ -50,39 +51,34 @@
 			notes = res.Notes ?? '';
 			confirmation = res.Confirmation ?? '';
 			supplierCat = res['Supplier Cat'] ?? '';
-			supplier = res.Supplier;
 			supplierName = nullish(res.Supplier);
 			grantName = nullish(res.Grant);
 		}
 	});
 
 	async function processClick(c: { id: number }) {
-		clicked = await getRow('items', c.id);
-		itemSearch = clicked.Name ?? '';
-		cat = clicked['Cat #'] ?? '';
-		vendor = clicked.Vendor;
-		vendorName = nullish(clicked.Vendor);
-		link = clicked.Link ?? '';
-	}
+		itemClicked = await getRow('items', c.id);
+		itemSearch = itemClicked.Name ?? '';
+		cat = itemClicked['Cat #'] ?? '';
+		console.log(itemClicked.Vendor);
 
-	async function processVendor(v: { id: number; Name: string }, type: 'vendor' | 'supplier') {
-		if (type === 'vendor') {
-			vendor = v;
-			vendorName = v.Name;
-		} else {
-			supplier = v;
-			supplierName = v.Name;
-		}
+		vendorName = nullish(itemClicked.Vendor);
+		link = itemClicked.Link ?? '';
 	}
 
 	async function handleSubmit() {
-		console.log(grantName);
 		const grant = (await getGrants()).find((g) => g[0] === grantName);
 
 		if (!itemSearch) {
-			alert('Please select an item');
+			alert('Please select an item or name one.');
 			return;
 		}
+
+		if (!grant) {
+			alert('Please select a grant');
+			return;
+		}
+
 		const nameKeys = await getNameKeys();
 		const req =
 			nameKeys[
@@ -91,7 +87,7 @@
 				) as string
 			];
 
-		const toSend = {
+		const toSend: Record<string, unknown> = {
 			Quantity: quantity,
 			'Unit Price': unitPrice,
 			Notes: notes,
@@ -101,26 +97,35 @@
 			Requestor: req
 		};
 
-		if (clicked) {
-			toSend.Item = [clicked.id];
-		} else {
-			if (!vendor) {
-				alert('Please select a vendor');
-				return;
-			}
+		if (!vendorName) {
+			alert('Please select a vendor');
+			return;
+		}
 
-			const resp = await submitRow('items', {
-				Name: itemSearch,
-				'Cat #': cat,
-				Vendor: [vendor.id],
-				Link: link
-			});
+		const itemupdate = {
+			Name: itemSearch,
+			'Cat #': cat,
+			Vendor: [(await getVendors())[vendorName]],
+			Link: link
+		};
+
+		console.log(cat);
+
+		if (itemClicked) {
+			toSend.Item = [itemClicked.id];
+			itemupdate.id = itemClicked.id;
+			console.log(itemupdate);
+
+			await updateRow('items', itemupdate);
+		} else {
+			// Create new item
+			const resp = await submitRow('items', itemupdate);
 			const newItemId = resp.data.id;
 			toSend.Item = [newItemId];
 		}
 
-		if (supplier?.id) {
-			toSend.Supplier = [supplier.id];
+		if (supplierName) {
+			toSend.Supplier = [(await getVendors())[supplierName]];
 		}
 
 		if (typeof orderId === 'number') {
@@ -135,9 +140,30 @@
 
 <div class="rounded p-8">
 	<h3>Item</h3>
-	<div class="grid max-w-xl grid-cols-2 gap-x-3">
-		<!-- <div class="" /> -->
 
+	<div class="my-1 flex items-center font-mono text-indigo-700">
+		{#if itemClicked}
+			<button
+				on:click={() => {
+					itemClicked = undefined;
+					itemSearch = '';
+					cat = '';
+					link = '';
+					vendorName = '';
+				}}
+			>
+				<Icon
+					src={XMark}
+					class="h-5 w-5 -translate-x-1 cursor-pointer stroke-2 transition-all hover:stroke-[3]"
+				/>
+			</button>
+			ID: {itemClicked?.id}
+		{:else}
+			New item
+		{/if}
+	</div>
+
+	<div class="grid max-w-xl grid-cols-2 gap-x-3">
 		<SearchItem
 			label="Name"
 			type="items"
@@ -145,7 +171,7 @@
 			on:click={(ev) => processClick(ev.detail)}
 			on:change={() => (touchedName = true)}
 			let:item
-			clicked={orderId}
+			clicked={itemClicked}
 		>
 			<th
 				scope="row"
@@ -162,26 +188,20 @@
 			>
 		</SearchItem>
 
-		<Textbox bind:value={cat} label="Cat #" disabled={!touchedName} />
+		<div class="flex flex-col">
+			<span class="mb-2 text-sm font-medium">Vendor</span>
+			<select class="h-auto" bind:value={vendorName}>
+				<option />
+				{#await getVendors() then ss}
+					{#each Object.keys(ss).sort() as s}
+						<option>{s}</option>
+					{/each}
+				{/await}
+			</select>
+		</div>
 
-		<SearchItem
-			label="Vendor"
-			type="vendors"
-			on:click={(ev) => processVendor(ev.detail, 'vendor')}
-			value={vendorName}
-			clicked={vendor?.id}
-			let:item
-			strict
-			disabled={!touchedName}
-		>
-			<td
-				class="max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap py-1.5 pl-1 pr-3 text-left text-gray-900"
-			>
-				{item.Name}
-			</td>
-		</SearchItem>
-
-		<Textbox bind:value={link} label="Link" disabled={!touchedName} />
+		<Textbox bind:value={cat} label="Cat #" />
+		<Textbox bind:value={link} label="Link" />
 	</div>
 
 	<h3>Order</h3>
@@ -205,33 +225,28 @@
 
 	<h3>Rachel</h3>
 	<div class="grid max-w-xl grid-cols-2 gap-x-3">
-		<div class="flex flex-col">
+		<div class="mb-4 flex flex-col">
 			<span class="mb-2 text-sm font-medium">Grant</span>
 			<select class="h-auto" bind:value={grantName}>
 				{#await getGrants() then grants}
 					<option />
-					{#each grants as grant}
+					{#each grants.sort((a, b) => a[0].localeCompare(b[0])) as grant}
 						<option>{grant[0]}</option>
 					{/each}
 				{/await}
 			</select>
 		</div>
 
-		<SearchItem
-			label="Supplier"
-			type="vendors"
-			on:click={(ev) => processVendor(ev.detail, 'supplier')}
-			value={supplierName}
-			clicked={supplier?.id}
-			let:item
-			strict
-		>
-			<td
-				class="max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap py-1.5 pl-1 pr-3 text-left text-gray-900"
-			>
-				{item.Name}
-			</td>
-		</SearchItem>
+		<div class="flex flex-col">
+			<span class="mb-2 text-sm font-medium">Supplier</span>
+			<select class="h-auto" bind:value={supplierName}>
+				{#await getVendors() then ss}
+					{#each Object.keys(ss).sort() as s}
+						<option>{s}</option>
+					{/each}
+				{/await}
+			</select>
+		</div>
 
 		<Textbox label="Supplier Cat" bind:value={supplierCat} />
 		<Textbox label="Order Confirmation" bind:value={confirmation} />
