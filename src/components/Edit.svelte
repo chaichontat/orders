@@ -254,7 +254,7 @@
 			<span class="mb-2 text-sm font-medium">Supplier</span>
 			<select class="h-auto" bind:value={supplierName}>
 				<option />
-				{#await getVendors() then ss}
+				{#await getVendors(true) then ss}
 					{#each Object.keys(ss).sort() as s}
 						<option>{s}</option>
 					{/each}

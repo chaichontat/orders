@@ -1,5 +1,5 @@
 import { browser } from '$app/environment';
-import { Fetcher, type ApiResponse } from 'openapi-typescript-fetch';
+import { Fetcher } from 'openapi-typescript-fetch';
 import type { paths } from './api';
 
 let fetcher: ReturnType<typeof Fetcher.for<paths>>;
@@ -21,6 +21,7 @@ let nameKey: Record<string, number> = {};
 const views = { new: 1780, ordered: 1781, received: 1783 };
 let grants: [string, number][] = [];
 const vendors: Record<string, number> = {};
+const suppliers: Record<string, number> = {};
 
 export type StrNull = string | null;
 export type LinkNull = { id: number; value: string }[] | null;
@@ -103,16 +104,19 @@ export async function getTable(table: keyof typeof tables, size = 200, page = 1)
 	return convertFields(out, table);
 }
 
-export async function getVendors() {
+export async function getVendors(supplierOnly = false) {
 	if (!Object.keys(vendors).length) {
 		const out = await getTable('vendors');
+		console.log(out);
+
 		for (const row of out) {
 			if (!row.Name) continue;
+			if (row.Supplier) suppliers[row.Name] = row.id;
 			vendors[row.Name] = row.id;
 		}
 	}
 
-	return vendors;
+	return supplierOnly ? suppliers : vendors;
 }
 
 export async function login(email: string, password: string) {
@@ -133,13 +137,10 @@ async function getFields(table: keyof typeof tables) {
 	const res = await getFields({ table_id: tables[table] });
 
 	if (table === 'orders') {
-		console.log(res.data);
-
 		const nameList = res.data.find((x: any) => x.name === 'Requestor')!.select_options as {
 			id: number;
 			value: string;
 		}[];
-		console.log(nameList);
 
 		nameKey = Object.fromEntries(nameList.map((x) => [x.value, x.id]));
 	}

@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { XMark } from '@steeze-ui/heroicons';
 	import { Icon } from '@steeze-ui/svelte-icon';
+	import { onMount } from 'svelte';
 	import { flip } from 'svelte/animate';
 	import { fade, slide } from 'svelte/transition';
 	import Edit from '../../components/Edit.svelte';
@@ -39,7 +40,16 @@
 
 	$: refresh(selected);
 
-	$: isOpen = clicked !== undefined;
+	onMount(() => {
+		window.onunhandledrejection = (e) => {
+			test_auth(token!).catch(() => {
+				localStorage.removeItem('token');
+				localStorage.removeItem('user');
+				goto('/');
+			});
+			console.error(e);
+		};
+	});
 </script>
 
 <svelte:head>
@@ -80,8 +90,6 @@
 	</section>
 	<button class="button blue" on:click={() => (clicked = 'new')}> Add Request </button>
 	<div class="flex-grow" />
-
-	<input type="text" />
 
 	{#if checked.some((c) => c) && selected === 'ordered'}
 		<button
