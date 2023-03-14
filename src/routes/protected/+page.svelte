@@ -2,13 +2,12 @@
 	import { goto } from '$app/navigation';
 	import { XMark } from '@steeze-ui/heroicons';
 	import { Icon } from '@steeze-ui/svelte-icon';
-	import { onMount } from 'svelte';
 	import { flip } from 'svelte/animate';
 	import { fade, slide } from 'svelte/transition';
 	import Edit from '../../components/Edit.svelte';
 	import Modal from '../../components/Modal.svelte';
 	import { deleteRow, getOrders, test_auth, updateRow, type OrderField } from '../../lib/getter';
-	import { classes, nullish, usd } from '../../lib/utils';
+	import { classes, nullish, today, usd } from '../../lib/utils';
 
 	const token = localStorage.getItem('token');
 	if (!token) {
@@ -43,8 +42,12 @@
 	$: isOpen = clicked !== undefined;
 </script>
 
+<svelte:head>
+	<title>Requests - {selected}</title>
+</svelte:head>
+
 <nav class="fixed top-0 left-0 flex w-full items-center gap-x-2 bg-slate-700">
-	<div class="h-14 w-14 bg-orange-600" />
+	<div class="h-14 w-14 bg-pink-600" />
 	<section class="flex flex-wrap p-2 text-sm text-gray-400">
 		<button
 			class={classes(
@@ -78,14 +81,15 @@
 	<button class="button blue" on:click={() => (clicked = 'new')}> Add Request </button>
 	<div class="flex-grow" />
 
+	<input type="text" />
+
 	{#if checked.some((c) => c) && selected === 'ordered'}
 		<button
 			class="button mr-4 bg-purple-500 text-white transition-colors duration-75 hover:bg-purple-600 focus:ring-purple-300"
 			on:click={async () => {
-				const date = new Date().toISOString().slice(0, 10);
 				for (const [i, item] of items.entries()) {
 					if (checked[i]) {
-						await updateRow('orders', { id: item.id, 'Date Received': date });
+						await updateRow('orders', { id: item.id, 'Date Received': today() });
 					}
 				}
 				refresh(selected);
@@ -93,7 +97,23 @@
 			transition:slide>Mark Received</button
 		>
 	{/if}
+
+	{#if checked.some((c) => c) && selected === 'received'}
+		<button
+			class="button mr-4 bg-red-500 text-white transition-colors duration-75 hover:bg-red-600 focus:ring-red-300"
+			on:click={async () => {
+				for (const [i, item] of items.entries()) {
+					if (checked[i]) {
+						await updateRow('orders', { id: item.id, 'Date Received': '' });
+					}
+				}
+				refresh(selected);
+			}}
+			transition:slide>Mark NOT Received</button
+		>
+	{/if}
 </nav>
+
 <!--
 <aside class="fixed top-0 left-0 flex h-full w-48 flex-col bg-slate-600">
 </aside> -->

@@ -28,6 +28,10 @@
 	}
 </script>
 
+<svelte:head>
+	<title>Login</title>
+</svelte:head>
+
 <div class="mt-16 flex w-full items-center justify-center">
 	<form class="flex w-96 flex-col" on:submit|preventDefault={handleSubmit}>
 		<Textbox label="Email" type="text" autocomplete="current-username" />

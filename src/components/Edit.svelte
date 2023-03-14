@@ -3,13 +3,13 @@
 		getGrants,
 		getNameKeys,
 		getRow,
-		getTable,
 		getVendors,
 		submitRow,
 		updateRow,
-		type ItemField
+		type ItemField,
+		type OrderField
 	} from '$lib/getter';
-	import { nullish, usd } from '$lib/utils';
+	import { nullish, today, usd } from '$lib/utils';
 	import { XMark } from '@steeze-ui/heroicons';
 	import { Icon } from '@steeze-ui/svelte-icon';
 
@@ -23,7 +23,6 @@
 	let quantity = '1';
 	let unitPrice = '0';
 
-	let touchedName = false;
 	const dispatch = createEventDispatcher();
 
 	let itemClicked: ItemField | undefined;
@@ -35,10 +34,11 @@
 	let vendorName = '';
 	let supplierName = '';
 	let grantName = '';
+	let res: OrderField | undefined;
 
 	onMount(async () => {
 		if (typeof orderId === 'number') {
-			const res = await getRow('orders', orderId);
+			res = await getRow('orders', orderId);
 			console.log(res);
 
 			itemClicked = await getRow('items', res.Item[0].id);
@@ -93,7 +93,7 @@
 			Notes: notes,
 			Confirmation: confirmation,
 			Grant: grant ? [grant[1]] : [],
-			'Supplier Cat #': supplierCat,
+			'Supplier Cat': supplierCat,
 			Requestor: req
 		};
 
@@ -128,6 +128,10 @@
 			toSend.Supplier = [(await getVendors())[supplierName]];
 		}
 
+		if (!res?.['Date Ordered'] && confirmation) {
+			toSend['Date Ordered'] = today();
+		}
+
 		if (typeof orderId === 'number') {
 			toSend.id = orderId;
 			await updateRow('orders', toSend);
@@ -139,28 +143,30 @@
 </script>
 
 <div class="rounded p-8">
-	<h3>Item</h3>
+	<div class="flex items-start">
+		<h3>Item</h3>
 
-	<div class="my-1 flex items-center font-mono text-indigo-700">
-		{#if itemClicked}
-			<button
-				on:click={() => {
-					itemClicked = undefined;
-					itemSearch = '';
-					cat = '';
-					link = '';
-					vendorName = '';
-				}}
-			>
-				<Icon
-					src={XMark}
-					class="h-5 w-5 -translate-x-1 cursor-pointer stroke-2 transition-all hover:stroke-[3]"
-				/>
-			</button>
-			ID: {itemClicked?.id}
-		{:else}
-			New item
-		{/if}
+		<div class="mt-1 ml-4 flex items-center font-mono text-orange-700">
+			{#if itemClicked}
+				<button
+					on:click={() => {
+						itemClicked = undefined;
+						itemSearch = '';
+						cat = '';
+						link = '';
+						vendorName = '';
+					}}
+				>
+					<Icon
+						src={XMark}
+						class="h-5 w-5 -translate-x-1 cursor-pointer stroke-2 transition-all hover:stroke-[3]"
+					/>
+				</button>
+				ID: {itemClicked?.id}
+			{:else}
+				New item
+			{/if}
+		</div>
 	</div>
 
 	<div class="grid max-w-xl grid-cols-2 gap-x-3">
@@ -201,7 +207,14 @@
 		</div>
 
 		<Textbox bind:value={cat} label="Cat #" />
-		<Textbox bind:value={link} label="Link" />
+
+		<Textbox bind:value={link} label="Link">
+			<span slot="label">
+				<a href={link} target="_blank" rel="noreferrer" class="ml-2 text-blue-700 hover:underline"
+					>Open link</a
+				>
+			</span>
+		</Textbox>
 	</div>
 
 	<h3>Order</h3>
@@ -240,6 +253,7 @@
 		<div class="flex flex-col">
 			<span class="mb-2 text-sm font-medium">Supplier</span>
 			<select class="h-auto" bind:value={supplierName}>
+				<option />
 				{#await getVendors() then ss}
 					{#each Object.keys(ss).sort() as s}
 						<option>{s}</option>
@@ -258,6 +272,10 @@
 <style lang="postcss">
 	h3 {
 		@apply mb-3 text-lg font-semibold text-gray-700;
+	}
+
+	h3:not(:first-child) {
+		@apply mt-8;
 	}
 
 	h3::after {

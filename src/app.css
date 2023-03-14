@@ -35,6 +35,14 @@
 	.blue-grad {
 		@apply bg-gradient-to-br from-sky-500 to-blue-600  text-white focus:ring-blue-300;
 	}
+
+	.textbox {
+		@apply block w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100;
+	}
+
+	select {
+		@apply bg-white;
+	}
 }
 
 @tailwind utilities;

@@ -96,9 +96,9 @@ export async function getOrders({
 	return convertFields(out, 'orders');
 }
 
-export async function getTable(table: keyof typeof tables) {
+export async function getTable(table: keyof typeof tables, size = 200, page = 1) {
 	const rowsGetter = fetcher.path('/api/database/rows/table/{table_id}/').method('get').create();
-	const res = await rowsGetter({ table_id: tables[table] });
+	const res = await rowsGetter({ table_id: tables[table], page, size });
 	const out = res.data.results;
 	return convertFields(out, table);
 }

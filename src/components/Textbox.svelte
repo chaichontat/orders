@@ -8,12 +8,11 @@
 	export let value = '';
 	export let placeholder = '';
 	export { cl as class };
-	export let textClass = 'bg-gray-50';
+	export let textClass = '';
 	export let disabled = false;
 
-	let _textClass =
-		'bg-gray-50 block w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100';
-	let cl = 'mb-6';
+	let _textClass = 'textbox';
+	let cl = 'mb-4';
 
 	let uid = Math.random().toString(36).slice(2, 9);
 
@@ -25,6 +24,7 @@
 <div class={cl}>
 	<label class="mb-2 block text-sm font-medium text-gray-900 dark:text-white" for={uid}>
 		{label}
+		<slot name="label" />
 	</label>
 	{#if type === 'text'}
 		<input

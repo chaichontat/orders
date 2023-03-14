@@ -31,3 +31,7 @@ export function clickOutside(node: HTMLElement, f?: () => void) {
 		}
 	};
 }
+
+export function today(): string {
+	return new Date().toISOString().slice(0, 10);
+}

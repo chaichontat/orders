@@ -14,8 +14,8 @@
 <dialog
 	bind:this={dialog}
 	on:close={() => (showModal = undefined)}
-	on:click|self={() => dialog.close()}
-	class="overflow-visible"
+	on:mousedown|self={() => dialog.close()}
+	class="overflow-scroll-y"
 >
 	<div class="relative" on:click|stopPropagation>
 		<slot name="header" />
@@ -33,7 +33,7 @@
 
 <style lang="postcss">
 	dialog {
-		@apply max-w-lg rounded-lg border-none p-0;
+		@apply max-w-3xl rounded-lg border-none p-0;
 	}
 	dialog::backdrop {
 		@apply bg-black bg-opacity-70;
