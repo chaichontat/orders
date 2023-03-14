@@ -3,7 +3,7 @@
 	import { createEventDispatcher } from 'svelte';
 
 	export let label: string;
-	export let type: 'text' | 'password' | 'number' = 'text';
+	export let type: 'text' | 'password' | 'number' | 'textarea' = 'text';
 	export let autocomplete = '';
 	export let value = '';
 	export let placeholder = '';
@@ -63,6 +63,22 @@
 	{:else if type === 'number'}
 		<input
 			type="number"
+			class={classes(_textClass, textClass)}
+			{autocomplete}
+			name={label.toLowerCase()}
+			required
+			id={uid}
+			bind:value
+			on:blur={() => dispatch('blur')}
+			on:keydown={() => dispatch('keydown')}
+			on:input={() => dispatch('input')}
+			on:paste={() => dispatch('paste')}
+			on:keypress={() => dispatch('change', { value })}
+			{placeholder}
+			{disabled}
+		/>
+	{:else if type === 'textarea'}
+		<textarea
 			class={classes(_textClass, textClass)}
 			{autocomplete}
 			name={label.toLowerCase()}

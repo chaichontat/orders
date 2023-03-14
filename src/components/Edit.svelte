@@ -266,7 +266,7 @@
 		<Textbox label="Order Confirmation" bind:value={confirmation} />
 	</div>
 
-	<button class="button blue max-w-xl" on:click={handleSubmit}>Submit</button>
+	<button class="button blue max-w-xl" on:click={handleSubmit}>Save</button>
 </div>
 
 <style lang="postcss">

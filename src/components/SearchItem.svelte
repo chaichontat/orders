@@ -24,10 +24,6 @@
 		dispatch('click', item);
 	}
 
-	function clearClicked() {
-		clicked = undefined;
-	}
-
 	$: if (changing && value) {
 		searcher(value);
 	} else {
@@ -39,6 +35,7 @@
 	<Textbox
 		{label}
 		bind:value
+		type="textarea"
 		on:change={() => {
 			changing = true;
 			dispatch('change', value);
