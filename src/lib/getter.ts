@@ -1,15 +1,26 @@
 import { browser } from '$app/environment';
+import {
+	PUBLIC_BASEROW_URL,
+	PUBLIC_GRANTS_TABLE,
+	PUBLIC_ITEMS_TABLE,
+	PUBLIC_ORDERS_TABLE,
+	PUBLIC_VENDORS_TABLE
+} from '$env/static/public';
 import { Fetcher } from 'openapi-typescript-fetch';
 import type { paths } from './api';
-
 let fetcher: ReturnType<typeof Fetcher.for<paths>>;
 
 if (browser) {
 	fetcher = Fetcher.for<paths>();
-	fetcher.configure({ baseUrl: 'https://baserow.gofflab.org' });
+	fetcher.configure({ baseUrl: PUBLIC_BASEROW_URL });
 }
 
-export const tables = { orders: 419, vendors: 421, items: 420, grants: 426 };
+export const tables = {
+	orders: PUBLIC_ORDERS_TABLE,
+	vendors: PUBLIC_VENDORS_TABLE,
+	items: PUBLIC_ITEMS_TABLE,
+	grants: PUBLIC_GRANTS_TABLE
+};
 const fields: Record<keyof typeof tables, Record<string, string>> = {
 	orders: {},
 	vendors: {},
@@ -126,7 +137,7 @@ export async function login(email: string, password: string) {
 
 export async function test_auth(token: string) {
 	fetcher.configure({
-		baseUrl: 'https://baserow.gofflab.org',
+		baseUrl: PUBLIC_BASEROW_URL,
 		init: { headers: { Authorization: `JWT ${token}` } }
 	});
 	return await fetcher.path('/api/user/dashboard/').method('get').create()({});
