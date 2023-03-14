@@ -4,6 +4,7 @@
 		getNameKeys,
 		getRow,
 		getVendors,
+		postNameKeys,
 		submitRow,
 		updateRow,
 		type ItemField,
@@ -66,6 +67,8 @@
 		link = itemClicked.Link ?? '';
 	}
 
+	console.log(postNameKeys('test'));
+
 	async function handleSubmit() {
 		const grant = (await getGrants()).find((g) => g[0] === grantName);
 
@@ -74,18 +77,23 @@
 			return;
 		}
 
-		if (!grant) {
-			alert('Please select a grant');
-			return;
-		}
-
 		const nameKeys = await getNameKeys();
-		const req =
+		let req =
 			nameKeys[
 				Object.keys(nameKeys).find((k) =>
 					k.includes(localStorage.getItem('firstName') as string)
 				) as string
 			];
+
+		if (!req) {
+			await postNameKeys(localStorage.getItem('firstName') as string);
+			req =
+				nameKeys[
+					Object.keys(nameKeys).find((k) =>
+						k.includes(localStorage.getItem('firstName') as string)
+					) as string
+				];
+		}
 
 		const toSend: Record<string, unknown> = {
 			Quantity: quantity,
@@ -175,7 +183,6 @@
 			type="items"
 			bind:value={itemSearch}
 			on:click={(ev) => processClick(ev.detail)}
-			on:change={() => (touchedName = true)}
 			let:item
 			clicked={itemClicked}
 		>

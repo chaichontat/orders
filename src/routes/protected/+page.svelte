@@ -14,14 +14,19 @@
 	if (!token) {
 		goto('/');
 	}
+	function auth_or_logout() {
+		test_auth(token!).catch(() => {
+			localStorage.removeItem('token');
+			localStorage.removeItem('user');
+			goto('/');
+		});
+	}
 
-	test_auth(token!).catch(() => {
-		localStorage.removeItem('token');
-		localStorage.removeItem('user');
-		goto('/');
-	});
+	auth_or_logout();
+	// run every 1 minute
+	setInterval(auth_or_logout, 60000);
 
-	let selected: 'new' | 'ordered' | 'received' = 'new';
+	let selected: 'requested' | 'ordered' | 'received' = 'requested';
 
 	let items: OrderField[] = [];
 	let checked: boolean[] = [];
@@ -62,11 +67,11 @@
 		<button
 			class={classes(
 				'rounded-l-lg border  p-2 px-4',
-				selected === 'new'
+				selected === 'requested'
 					? 'text-semibold border-neutral-200 bg-slate-500 text-white'
 					: 'border-neutral-400 hover:bg-slate-600'
 			)}
-			on:click={() => (selected = 'new')}
+			on:click={() => (selected = 'requested')}
 			>New
 		</button>
 		<button

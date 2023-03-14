@@ -29,7 +29,7 @@ const fields: Record<keyof typeof tables, Record<string, string>> = {
 };
 let nameKey: Record<string, number> = {};
 
-const views = { new: 1780, ordered: 1781, received: 1783 };
+const views = { requested: null, ordered: null, received: null };
 let grants: [string, number][] = [];
 const vendors: Record<string, number> = {};
 const suppliers: Record<string, number> = {};
@@ -93,8 +93,20 @@ async function convertFields(out: any[], type: keyof typeof tables) {
 	return out as unknown as typeof type extends 'orders' ? OrderField[] : ItemField[];
 }
 
+export async function listViews(table_id: number | string) {
+	const viewGetter = fetcher.path('/api/database/views/table/{table_id}/').method('get').create();
+	const res = await viewGetter({ table_id });
+	const out = {};
+	for (const v of res.data) {
+		out[v.name] = v.id;
+	}
+	views['ordered'] = out['Ordered'];
+	views['received'] = out['Received'];
+	views['requested'] = out['Requested'];
+}
+
 export async function getOrders({
-	view = 'new',
+	view = 'requested',
 	size = 50,
 	page = 1
 }: {
@@ -102,6 +114,11 @@ export async function getOrders({
 	view: keyof typeof views;
 	page: number;
 }) {
+	await getFields('orders');
+	if (views[view] === null) {
+		await listViews(tables.orders);
+	}
+
 	const rowsGetter = fetcher.path('/api/database/views/grid/{view_id}/').method('get').create();
 	const res = await rowsGetter({ view_id: views[view], page, size });
 	const out = res.data.results;
@@ -239,6 +256,31 @@ export async function getNameKeys() {
 	if (Object.keys(nameKey).length) return nameKey;
 	await getFields('orders');
 	return nameKey;
+}
+
+export async function postNameKeys(value: string) {
+	await getFields('orders');
+	const req = Object.entries(fields.orders).find(([, name]) => name === 'Requestor')![0];
+
+	const field_id = Number(req.split('_')[1]);
+	console.log(field_id);
+
+	const nameKeys = await fetcher
+		.path('/api/database/fields/{field_id}/')
+		.method('get')
+		.create()({ field_id })
+		.then((res) => res.data.select_options as { id: number; value: string; color: string }[]);
+
+	if (nameKeys.find((x) => x.value === value)) return;
+
+	const pnk = fetcher.path('/api/database/fields/{field_id}/').method('patch').create();
+	await pnk({
+		field_id,
+		name: 'Requestor',
+		type: 'single_select',
+		select_options: [...nameKeys, { value, id: -(nameKeys.length + 1), color: 'gray' }]
+	});
+	await getNameKeys();
 }
 
 export async function deleteRow(table: keyof typeof tables, id: number) {

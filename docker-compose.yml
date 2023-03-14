@@ -1,0 +1,40 @@
+services:
+  baserow:
+    image: baserow/baserow:1.14.0
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - baserow_data:/baserow/data
+    environment:
+      - BASEROW_PUBLIC_URL=https://baserow.gofflab.org
+      - BASEROW_CADDY_ADDRESSES=https://baserow.gofflab.org
+      - EMAIL_SMTP=True
+      - EMAIL_SMTP_HOST=**EXAMPLE smtp.gmail.com**
+      - EMAIL_SMTP_PORT=587
+      - EMAIL_SMTP_USER=**FILL IN YOUR OWN**
+      - EMAIL_SMTP_PASSWORD=**FILL IN YOUR OWN**
+      - EMAIL_SMTP_USE_TLS=True
+      - FROM_EMAIL=**FILL IN YOUR OWN**
+      - DATABASE_HOST=db
+      - DATABASE_PASSWORD=**MAKE ONE**
+
+  db:
+    image: postgres:11
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    depends_on:
+      - baserow
+    environment:
+      POSTGRES_USER: baserow
+      POSTGRES_PASSWORD: **SAME AS DATABASE_PASSWORD**
+      POSTGRES_DB: baserow
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - /home/ubuntu:/temp:ro
+volumes:
+  baserow_data:
+    external: true
+  pg_data:
+    external: true
