@@ -11,6 +11,9 @@ password = ""
 timezone = "America/New_York"
 
 
+url += "/api"
+
+
 def get_jwt(username: str, password: str):
     return requests.post(
         url + "/user/token-auth/", data={"username": username, "password": password}
@@ -366,5 +369,9 @@ views["ordered"] = gen_view(
 
 
 # %%
+print("NODE_VERSION=16")
+print(f"PUBLIC_BASEROW_URL={url}")
 for k, v in newTables.items():
     print(f"PUBLIC_{k.upper()}_TABLE={v}")
+
+# %%
