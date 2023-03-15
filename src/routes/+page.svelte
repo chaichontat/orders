@@ -5,7 +5,7 @@
 	import Textbox from '../components/Textbox.svelte';
 
 	onMount(() => {
-		if (localStorage.getItem('token')) {
+		if (localStorage.getItem('access_token')) {
 			goto('/protected');
 		}
 	});
@@ -19,7 +19,8 @@
 			.then((response) => {
 				localStorage.setItem('firstName', response.data.user.first_name);
 				localStorage.setItem('email', email);
-				localStorage.setItem('token', response.data.access_token!);
+				localStorage.setItem('access_token', response.data.access_token!);
+				localStorage.setItem('refresh_token', response.data.refresh_token!);
 				goto('/protected');
 			})
 			.catch(() => {

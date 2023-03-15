@@ -10,22 +10,27 @@
 	import { deleteRow, getOrders, test_auth, updateRow, type OrderField } from '../../lib/getter';
 	import { classes, nullish, today, usd } from '../../lib/utils';
 
-	const token = localStorage.getItem('token');
-	if (!token) {
-		goto('/');
-	}
+	// Auth stuffs
 	function auth_or_logout() {
-		test_auth(token!).catch(() => {
+		test_auth(localStorage.getItem('access_token')).catch(() => {
 			localStorage.removeItem('token');
 			localStorage.removeItem('user');
+			localStorage.removeItem('access_token');
+			localStorage.removeItem('refresh_token');
 			goto('/');
 		});
 	}
 
 	auth_or_logout();
-	// run every 1 minute
 	setInterval(auth_or_logout, 60000);
+	onMount(() => {
+		window.onunhandledrejection = (e) => {
+			auth_or_logout();
+			console.error(e);
+		};
+	});
 
+	// Actual page stuffs
 	let selected: 'requested' | 'ordered' | 'received' = 'requested';
 
 	let items: OrderField[] = [];
@@ -39,22 +44,9 @@
 		});
 	}
 
-	const waiter = new Promise((resolve) => {
-		setTimeout(resolve, 500);
-	});
+	const waiter = new Promise((resolve) => setTimeout(resolve, 500));
 
 	$: refresh(selected);
-
-	onMount(() => {
-		window.onunhandledrejection = (e) => {
-			test_auth(token!).catch(() => {
-				localStorage.removeItem('token');
-				localStorage.removeItem('user');
-				goto('/');
-			});
-			console.error(e);
-		};
-	});
 </script>
 
 <svelte:head>
@@ -219,7 +211,7 @@
 		</div>
 	</section>
 
-	{#await waiter then value}
+	{#await waiter}
 		{#if !items.length}
 			<div
 				class="mt-4 flex flex-col items-center justify-center text-center leading-relaxed"

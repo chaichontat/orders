@@ -152,12 +152,30 @@ export async function login(email: string, password: string) {
 	return await getAuth({ email, password });
 }
 
-export async function test_auth(token: string) {
+export async function refreshToken(refresh: string) {
+	const getToken = fetcher.path('/api/user/token-refresh/').method('post').create();
+	return await (
+		await getToken({ refresh_token: refresh })
+	).data.access_token;
+}
+
+export async function test_auth(access_token: string | null) {
 	fetcher.configure({
 		baseUrl: PUBLIC_BASEROW_URL,
-		init: { headers: { Authorization: `JWT ${token}` } }
+		init: { headers: { Authorization: `JWT ${access_token}` } }
 	});
-	return await fetcher.path('/api/user/dashboard/').method('get').create()({});
+	try {
+		await fetcher.path('/api/user/dashboard/').method('get').create()({});
+	} catch (e) {
+		const newToken = await refreshToken(localStorage.getItem('refresh_token')!);
+		if (newToken) {
+			localStorage.setItem('token', newToken);
+			fetcher.configure({
+				baseUrl: PUBLIC_BASEROW_URL,
+				init: { headers: { Authorization: `JWT ${newToken}` } }
+			});
+		}
+	}
 }
 
 async function getFields(table: keyof typeof tables) {
