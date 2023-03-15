@@ -160,6 +160,7 @@ export async function refreshToken(refresh: string) {
 }
 
 export async function test_auth(access_token: string | null) {
+	fetcher = Fetcher.for<paths>();
 	fetcher.configure({
 		baseUrl: PUBLIC_BASEROW_URL,
 		init: { headers: { Authorization: `JWT ${access_token}` } }
@@ -169,7 +170,8 @@ export async function test_auth(access_token: string | null) {
 	} catch (e) {
 		const newToken = await refreshToken(localStorage.getItem('refresh_token')!);
 		if (newToken) {
-			localStorage.setItem('token', newToken);
+			localStorage.setItem('access_token', newToken);
+			fetcher = Fetcher.for<paths>();
 			fetcher.configure({
 				baseUrl: PUBLIC_BASEROW_URL,
 				init: { headers: { Authorization: `JWT ${newToken}` } }
