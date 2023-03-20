@@ -89,7 +89,7 @@
 		<button
 			class="button mr-4 bg-purple-500 text-white transition-colors duration-75 hover:bg-purple-600 focus:ring-purple-300"
 			on:click={async () => {
-				for (const [i, item] of items.entries()) {
+				for (const [i, item] of (await items).entries()) {
 					if (checked[i]) {
 						await updateRow('orders', { id: item.id, 'Date Received': today() });
 					}
@@ -104,7 +104,7 @@
 		<button
 			class="button mr-4 bg-red-500 text-white transition-colors duration-75 hover:bg-red-600 focus:ring-red-300"
 			on:click={async () => {
-				for (const [i, item] of items.entries()) {
+				for (const [i, item] of (await items).entries()) {
 					if (checked[i]) {
 						await updateRow('orders', { id: item.id, 'Date Received': '' });
 					}
