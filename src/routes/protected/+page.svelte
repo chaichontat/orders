@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { XMark } from '@steeze-ui/heroicons';
 	import { Icon } from '@steeze-ui/svelte-icon';
 	import { onMount } from 'svelte';
@@ -7,20 +6,16 @@
 	import { fade, slide } from 'svelte/transition';
 	import Edit from '../../components/Edit.svelte';
 	import Modal from '../../components/Modal.svelte';
-	import { deleteRow, getOrders, test_auth, updateRow, type OrderField } from '../../lib/getter';
+	import {
+		auth_or_logout,
+		deleteRow,
+		getOrders,
+		updateRow,
+		type OrderField
+	} from '../../lib/getter';
 	import { classes, nullish, today, usd } from '../../lib/utils';
 
 	// Auth stuffs
-	function auth_or_logout() {
-		test_auth(localStorage.getItem('access_token')).catch(() => {
-			localStorage.removeItem('token');
-			localStorage.removeItem('user');
-			localStorage.removeItem('access_token');
-			localStorage.removeItem('refresh_token');
-			goto('/');
-		});
-	}
-
 	auth_or_logout();
 	setInterval(auth_or_logout, 60000);
 	onMount(() => {
@@ -33,24 +28,26 @@
 	// Actual page stuffs
 	let selected: 'requested' | 'ordered' | 'received' = 'requested';
 
-	let items: OrderField[] = [];
 	let checked: boolean[] = [];
 	let clicked: number | undefined | 'new';
+	let first = true;
 
-	function refresh(sel: typeof selected) {
-		getOrders({ view: sel }).then((res) => {
-			checked = new Array(res.length).fill(false);
-			items = res;
-		});
+	async function refresh(sel: typeof selected) {
+		const res = await getOrders({ view: sel });
+		checked = new Array(res.length).fill(false);
+		first = false;
+		return res;
 	}
 
-	const waiter = new Promise((resolve) => setTimeout(resolve, 500));
+	let items = refresh(selected) as Promise<OrderField[]>;
 
-	$: refresh(selected);
+	const waiter = new Promise((resolve) => setTimeout(resolve, 2000));
+
+	$: items = refresh(selected);
 </script>
 
 <svelte:head>
-	<title>Requests - {selected}</title>
+	<title>{selected.charAt(0).toUpperCase() + selected.slice(1)} - Orders</title>
 </svelte:head>
 
 <nav class="fixed top-0 left-0 flex w-full items-center gap-x-2 bg-slate-700">
@@ -124,7 +121,7 @@
 </aside> -->
 
 <main class="mt-16 bg-neutral-100">
-	<section class="p-4">
+	<section class="relative p-4">
 		<div
 			class="header text-semibold flex h-8 flex-shrink-0 items-center justify-between gap-x-3 px-1 pr-3 text-xs"
 		>
@@ -146,82 +143,91 @@
 			<div class="flex-[1]" />
 		</div>
 
-		<div
-			class="listing flex min-w-min flex-grow flex-col overflow-hidden rounded-lg border text-sm text-gray-700"
-		>
-			{#each items as item, i (item.id)}
+		{#await items}
+			{#if first}
 				<div
-					class="row flex flex-shrink-0 items-center justify-between gap-x-3 py-5 px-1 pr-3"
-					transition:fade={{ duration: 200 }}
-					animate:flip={{ duration: 200 }}
+					class="absolute left-1/2 mt-4 flex -translate-x-1/2 flex-col items-center justify-center text-center leading-relaxed"
+					out:fade
 				>
-					<div class="ml-2 -mr-1 flex-[1]">
-						<input type="checkbox" bind:checked={checked[i]} />
-					</div>
-					<div class="flex-[12]">
-						<div
-							class="clamp cursor-pointer underline decoration-sky-300 decoration-dotted underline-offset-4"
-							on:click={() => (clicked = item.id)}
-						>
-							{nullish(item.Item)}
-						</div>
-						{#if item.Notes}
-							<div class="mt-1 text-xs text-neutral-500">📌 {item.Notes}</div>
-						{/if}
-					</div>
-					<div class="cell flex flex-[6] flex-col justify-center">
-						<div class="text-sm">{nullish(item.Vendor)}</div>
-						<div class="mt-1 text-xs text-neutral-500">{nullish(item['Cat #'])}</div>
-					</div>
-					<div class="flex-[5]">
-						<div class="text-sm">{usd(item.Price)}</div>
-						<div class="mt-1 text-xs text-neutral-500">
-							{`${usd(item['Unit Price'])} × ${item['Quantity']} `}
-						</div>
-					</div>
-					<div class="flex-[6] text-ellipsis whitespace-nowrap text-xs text-neutral-500">
-						{nullish(item['Grant'])}
-					</div>
-					<div class="flex-[5] text-neutral-600">
-						{item['Requestor'] ? item['Requestor'].value : ''}
-					</div>
-					<div class="flex-[4] text-neutral-600">
-						{#if selected === 'ordered'}
-							{item['Date Ordered']}
-						{:else if selected === 'received'}
-							{item['Date Received']}
-						{:else}
-							{item.Created}
-						{/if}
-					</div>
-					<div
-						class="flex-[1]"
-						on:click={async () => {
-							await deleteRow('orders', item.id);
-							refresh(selected);
-						}}
-					>
-						<Icon
-							src={XMark}
-							class="h-4 w-4 cursor-pointer stroke-gray-700 stroke-[1.5] hover:stroke-2"
-						/>
-					</div>
+					<span class="animate-pulse text-3xl font-extralight tracking-wider"> Loading. </span>
 				</div>
-			{/each}
-		</div>
+			{/if}
+		{:then resolved}
+			{#if resolved.length}
+				<div
+					class="listing flex min-w-min flex-grow flex-col overflow-hidden rounded-lg border text-sm text-gray-700"
+				>
+					{#each resolved as item, i (item.id)}
+						<div
+							class="row flex flex-shrink-0 items-center justify-between gap-x-3 py-5 px-1 pr-3"
+							transition:fade={{ duration: 200 }}
+							animate:flip={{ duration: 200 }}
+						>
+							<div class="ml-2 -mr-1 flex-[1]">
+								<input type="checkbox" bind:checked={checked[i]} />
+							</div>
+							<div class="flex-[12]">
+								<div
+									class="clamp cursor-pointer underline decoration-sky-300 decoration-dotted underline-offset-4"
+									on:click={() => (clicked = item.id)}
+								>
+									{nullish(item.Item)}
+								</div>
+								{#if item.Notes}
+									<div class="mt-1 text-xs text-neutral-500">📌 {item.Notes}</div>
+								{/if}
+							</div>
+							<div class="cell flex flex-[6] flex-col justify-center">
+								<div class="text-sm">{nullish(item.Vendor)}</div>
+								<div class="mt-1 text-xs text-neutral-500">{nullish(item['Cat #'])}</div>
+							</div>
+							<div class="flex-[5]">
+								<div class="text-sm">{usd(item.Price)}</div>
+								<div class="mt-1 text-xs text-neutral-500">
+									{`${usd(item['Unit Price'])} × ${item['Quantity']} `}
+								</div>
+							</div>
+							<div class="flex-[6] text-ellipsis whitespace-nowrap text-xs text-neutral-500">
+								{nullish(item['Grant'])}
+							</div>
+							<div class="flex-[5] text-neutral-600">
+								{item['Requestor'] ? item['Requestor'].value : ''}
+							</div>
+							<div class="flex-[4] text-neutral-600">
+								{#if selected === 'ordered'}
+									{item['Date Ordered']}
+								{:else if selected === 'received'}
+									{item['Date Received']}
+								{:else}
+									{item.Created}
+								{/if}
+							</div>
+							<div
+								class="flex-[1]"
+								on:click={async () => {
+									await deleteRow('orders', item.id);
+									refresh(selected);
+								}}
+							>
+								<Icon
+									src={XMark}
+									class="h-4 w-4 cursor-pointer stroke-gray-700 stroke-[1.5] hover:stroke-2"
+								/>
+							</div>
+						</div>
+					{/each}
+				</div>
+			{:else}
+				<div
+					class="mt-4 flex flex-col items-center justify-center text-center leading-relaxed"
+					transition:fade
+				>
+					<span class="text-3xl font-extralight tracking-wider"> It's empty. </span>
+					<span class="mt-2 text-xl">Congratulations! 🎉</span>
+				</div>
+			{/if}
+		{/await}
 	</section>
-
-	{#await waiter}
-		{#if !items.length}
-			<div
-				class="mt-4 flex flex-col items-center justify-center text-center leading-relaxed"
-				transition:fade
-			>
-				<span class="text-3xl font-extralight tracking-wider"> It's empty. </span>
-				<span class="mt-2 text-xl">Congratulations! 🎉</span>
-			</div>
-		{/if}
-	{/await}
 </main>
 
 <Modal bind:showModal={clicked}>

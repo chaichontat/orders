@@ -1,13 +1,11 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { login } from '$lib/getter';
+	import { auth_or_logout, login } from '$lib/getter';
 	import { onMount } from 'svelte';
 	import Textbox from '../components/Textbox.svelte';
 
 	onMount(() => {
-		if (localStorage.getItem('access_token')) {
-			goto('/protected');
-		}
+		auth_or_logout(false);
 	});
 
 	function handleSubmit(ev: SubmitEvent) {

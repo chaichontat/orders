@@ -1,4 +1,5 @@
 import { browser } from '$app/environment';
+import { goto } from '$app/navigation';
 import {
 	PUBLIC_BASEROW_URL,
 	PUBLIC_GRANTS_TABLE,
@@ -309,4 +310,18 @@ export async function deleteRow(table: keyof typeof tables, id: number) {
 		.method('delete')
 		.create();
 	return await deleteRow({ table_id: tables[table], row_id: id });
+}
+
+export async function auth_or_logout(redirect = true) {
+	try {
+		await test_auth(localStorage.getItem('access_token'));
+		return true;
+	} catch {
+		localStorage.removeItem('token');
+		localStorage.removeItem('user');
+		localStorage.removeItem('access_token');
+		localStorage.removeItem('refresh_token');
+		if (redirect) goto('/');
+		return false;
+	}
 }
