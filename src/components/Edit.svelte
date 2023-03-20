@@ -212,6 +212,19 @@
 				>
 			</SearchItem>
 
+			<Textbox bind:value={link} label="Link" type="textarea">
+				<span slot="label">
+					<a
+						href={link}
+						target="_blank"
+						rel="noreferrer"
+						class="ml-2 text-blue-700 hover:underline"
+					>
+						Open link
+					</a>
+				</span>
+			</Textbox>
+
 			<div class="flex flex-col">
 				<span class="mb-2 text-sm font-medium">Vendor</span>
 				<select class="h-auto" bind:value={vendorName}>
@@ -225,14 +238,6 @@
 			</div>
 
 			<Textbox bind:value={cat} label="Cat #" />
-
-			<Textbox bind:value={link} label="Link">
-				<span slot="label">
-					<a href={link} target="_blank" rel="noreferrer" class="ml-2 text-blue-700 hover:underline"
-						>Open link</a
-					>
-				</span>
-			</Textbox>
 		</div>
 
 		<h3>Order</h3>
@@ -254,7 +259,7 @@
 			<Textbox label="Notes" bind:value={notes} />
 		</div>
 
-		<h3>Rachel</h3>
+		<h3>Administrative</h3>
 		<div class="grid max-w-xl grid-cols-2 gap-x-3">
 			<div class="mb-4 flex flex-col">
 				<span class="mb-2 text-sm font-medium">Grant</span>
