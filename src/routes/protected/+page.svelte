@@ -41,8 +41,6 @@
 
 	let items = refresh(selected) as Promise<OrderField[]>;
 
-	const waiter = new Promise((resolve) => setTimeout(resolve, 2000));
-
 	$: items = refresh(selected);
 </script>
 
@@ -235,7 +233,7 @@
 		<Edit
 			on:submit={() => {
 				clicked = undefined;
-				refresh(selected);
+				items = refresh(selected);
 			}}
 			orderId={clicked === 'new' ? undefined : clicked}
 		/>
