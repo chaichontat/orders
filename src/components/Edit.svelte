@@ -226,7 +226,7 @@
 			</Textbox>
 
 			<div class="flex flex-col">
-				<span class="mb-2 text-sm font-medium">Vendor</span>
+				<span class="mb-2 text-sm font-medium">Manufacturer</span>
 				<select class="h-auto" bind:value={vendorName}>
 					<option />
 					{#await getVendors() then ss}
