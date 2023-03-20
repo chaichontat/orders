@@ -26,8 +26,10 @@
 		<button
 			autofocus
 			class="absolute top-4 right-4 border-none opacity-80 hover:opacity-100"
-			on:click={() => dialog.close()}><Icon class="h-6 w-6 stroke-[1.5]" src={XMark} /></button
+			on:click={() => dialog.close()}
 		>
+			<Icon class="h-6 w-6 stroke-2 hover:stroke-[3]" src={XMark} />
+		</button>
 	</div>
 </dialog>
 

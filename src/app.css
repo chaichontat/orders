@@ -1,3 +1,4 @@
+@import 'tippy.js/dist/tippy.css';
 :root {
 	--sans-serif: -apple-system, BlinkMacSystemFont, 'avenir next', avenir, helvetica,
 		'helvetica neue', ubuntu, roboto, noto, 'segoe ui', arial, sans-serif;
@@ -52,5 +53,13 @@
 		display: -webkit-box;
 		-webkit-line-clamp: 3;
 		-webkit-box-orient: vertical;
+	}
+
+	.tippy-box {
+		@apply z-50 rounded-lg bg-neutral-700/80 py-0.5 px-1 text-center backdrop-blur;
+	}
+
+	.tippy-box > .tippy-arrow {
+		@apply text-neutral-700/80;
 	}
 }

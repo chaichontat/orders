@@ -1,3 +1,5 @@
+import tippy from 'tippy.js';
+
 export function classes(...classes: (false | null | undefined | string)[]): string {
 	return classes.filter(Boolean).join(' ');
 }
@@ -34,4 +36,19 @@ export function clickOutside(node: HTMLElement, f?: () => void) {
 
 export function today(): string {
 	return new Date().toISOString().slice(0, 10);
+}
+
+export function tooltip(
+	node: HTMLElement,
+	{ content, enabled = true }: { content: string; enabled?: boolean }
+) {
+	if (enabled) {
+		node.setAttribute('aria-label', content);
+		node.title = '';
+		const tip = tippy(node, { content, delay: [50, 0] });
+		return {
+			update: (newmsg: string): void => tip.setContent(newmsg),
+			destroy: (): void => tip.destroy()
+		};
+	}
 }
