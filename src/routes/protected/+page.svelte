@@ -32,16 +32,18 @@
 	let clicked: number | undefined | 'new';
 	let first = true;
 
+	let items: Promise<OrderField[]> = new Promise(() => {});
+
 	async function refresh(sel: typeof selected) {
-		const res = await getOrders({ view: sel });
+		items = getOrders({ view: sel });
+		let res = await items;
 		checked = new Array(res.length).fill(false);
 		first = false;
-		return res;
 	}
 
-	let items = refresh(selected) as Promise<OrderField[]>;
+	refresh(selected);
 
-	$: items = refresh(selected);
+	$: refresh(selected);
 </script>
 
 <svelte:head>
@@ -233,7 +235,7 @@
 		<Edit
 			on:submit={() => {
 				clicked = undefined;
-				items = refresh(selected);
+				refresh(selected);
 			}}
 			orderId={clicked === 'new' ? undefined : clicked}
 		/>
