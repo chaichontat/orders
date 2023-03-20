@@ -370,7 +370,7 @@ views["ordered"] = gen_view(
 
 # %%
 print("NODE_VERSION=16")
-print(f"PUBLIC_BASEROW_URL={url}")
+print(f"PUBLIC_BASEROW_URL={url if not url.endswith('api') else url[:-4]}")
 for k, v in newTables.items():
     print(f"PUBLIC_{k.upper()}_TABLE={v}")
 
