@@ -10,11 +10,12 @@
 		type ItemField,
 		type OrderField
 	} from '$lib/getter';
-	import { nullish, today, usd } from '$lib/utils';
+	import { nullish, today, tooltip, usd } from '$lib/utils';
 	import { XMark } from '@steeze-ui/heroicons';
 	import { Icon } from '@steeze-ui/svelte-icon';
 
 	import { createEventDispatcher, onMount } from 'svelte';
+	import { fade } from 'svelte/transition';
 	import SearchItem from './SearchItem.svelte';
 	import Textbox from './Textbox.svelte';
 
@@ -117,8 +118,6 @@
 			Link: link
 		};
 
-		console.log(cat);
-
 		if (itemClicked) {
 			toSend.Item = [itemClicked.id];
 			itemupdate.id = itemClicked.id;
@@ -145,135 +144,148 @@
 			await updateRow('orders', toSend);
 		} else {
 			await submitRow('orders', toSend);
+
+			fetch('https://hooks.slack.com/services/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', {
+				method: 'POST',
+				body: JSON.stringify({
+					text: `New order created for ${itemSearch} from ${localStorage.getItem('firstName')}.`
+				})
+			});
 		}
 		dispatch('submit');
 	}
 </script>
 
-<div class="rounded p-8">
-	<div class="flex items-start">
-		<h3>Item</h3>
+<div class="relative rounded">
+	{#if orderId && !res}
+		<div class="absolute z-50 h-full w-full bg-neutral-50/90" out:fade />
+	{/if}
+	<div class="p-8">
+		<div class="flex items-start">
+			<h3>Item</h3>
 
-		<div class="mt-1 ml-4 flex items-center font-mono text-orange-700">
-			{#if itemClicked}
-				<button
-					on:click={() => {
-						itemClicked = undefined;
-						itemSearch = '';
-						cat = '';
-						link = '';
-						vendorName = '';
-					}}
-				>
-					<Icon
-						src={XMark}
-						class="h-5 w-5 -translate-x-1 cursor-pointer stroke-2 transition-all hover:stroke-[3]"
-					/>
-				</button>
-				ID: {itemClicked?.id}
-			{:else}
-				New item
-			{/if}
-		</div>
-	</div>
-
-	<div class="grid max-w-xl grid-cols-2 gap-x-3">
-		<SearchItem
-			label="Name"
-			type="items"
-			bind:value={itemSearch}
-			on:click={(ev) => processClick(ev.detail)}
-			let:item
-			clicked={itemClicked}
-		>
-			<th
-				scope="row"
-				class="max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap py-1.5 pl-1 pr-3 text-left font-medium text-gray-900"
-			>
-				{item['Cat #']}
-			</th>
-
-			<td class="clamp w-[250px] py-1 pr-2 text-sm text-gray-700">{item.Name}</td>
-
-			<td
-				class="max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap text-xs text-gray-700"
-				>{nullish(item.Vendor)}</td
-			>
-		</SearchItem>
-
-		<div class="flex flex-col">
-			<span class="mb-2 text-sm font-medium">Vendor</span>
-			<select class="h-auto" bind:value={vendorName}>
-				<option />
-				{#await getVendors() then ss}
-					{#each Object.keys(ss).sort() as s}
-						<option>{s}</option>
-					{/each}
-				{/await}
-			</select>
-		</div>
-
-		<Textbox bind:value={cat} label="Cat #" />
-
-		<Textbox bind:value={link} label="Link">
-			<span slot="label">
-				<a href={link} target="_blank" rel="noreferrer" class="ml-2 text-blue-700 hover:underline"
-					>Open link</a
-				>
-			</span>
-		</Textbox>
-	</div>
-
-	<h3>Order</h3>
-	<div class=" max-w-xl">
-		<div class="grid grid-cols-3 items-center gap-x-2">
-			<div class="col-span-2 flex items-center gap-x-2">
-				<Textbox label="Quantity" type="number" bind:value={quantity} />
-				×
-				<Textbox label="Unit Price" type="number" bind:value={unitPrice} />
-				=
+			<div class="mt-1 ml-4 flex items-center font-mono text-orange-700">
+				{#if itemClicked}
+					<button
+						on:click={() => {
+							itemClicked = undefined;
+							itemSearch = '';
+							cat = '';
+							link = '';
+							vendorName = '';
+						}}
+						use:tooltip={{ content: 'Editing existing item. Click this to create a new item.' }}
+					>
+						<Icon
+							src={XMark}
+							class="h-5 w-5 -translate-x-1 cursor-pointer stroke-2 transition-all hover:stroke-[3]"
+						/>
+					</button>
+					ID: {itemClicked?.id}
+				{:else}
+					New item
+				{/if}
 			</div>
-			<span class="text-xl font-medium">
-				{usd(Number(quantity) * Number(unitPrice))
-					? usd(Number(quantity) * Number(unitPrice))
-					: '$0.00'}
-			</span>
 		</div>
 
-		<Textbox label="Notes" bind:value={notes} />
-	</div>
+		<div class="grid max-w-xl grid-cols-2 gap-x-3">
+			<SearchItem
+				label="Name"
+				type="items"
+				bind:value={itemSearch}
+				on:click={(ev) => processClick(ev.detail)}
+				let:item
+				clicked={itemClicked}
+			>
+				<th
+					scope="row"
+					class="max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap py-1.5 pl-1 pr-3 text-left font-medium text-gray-900"
+				>
+					{item['Cat #']}
+				</th>
 
-	<h3>Rachel</h3>
-	<div class="grid max-w-xl grid-cols-2 gap-x-3">
-		<div class="mb-4 flex flex-col">
-			<span class="mb-2 text-sm font-medium">Grant</span>
-			<select class="h-auto" bind:value={grantName}>
-				{#await getGrants() then grants}
+				<td class="clamp w-[250px] py-1 pr-2 text-sm text-gray-700">{item.Name}</td>
+
+				<td
+					class="max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap text-xs text-gray-700"
+					>{nullish(item.Vendor)}</td
+				>
+			</SearchItem>
+
+			<div class="flex flex-col">
+				<span class="mb-2 text-sm font-medium">Vendor</span>
+				<select class="h-auto" bind:value={vendorName}>
 					<option />
-					{#each grants.sort((a, b) => a[0].localeCompare(b[0])) as grant}
-						<option>{grant[0]}</option>
-					{/each}
-				{/await}
-			</select>
+					{#await getVendors() then ss}
+						{#each Object.keys(ss).sort() as s}
+							<option>{s}</option>
+						{/each}
+					{/await}
+				</select>
+			</div>
+
+			<Textbox bind:value={cat} label="Cat #" />
+
+			<Textbox bind:value={link} label="Link">
+				<span slot="label">
+					<a href={link} target="_blank" rel="noreferrer" class="ml-2 text-blue-700 hover:underline"
+						>Open link</a
+					>
+				</span>
+			</Textbox>
 		</div>
 
-		<div class="flex flex-col">
-			<span class="mb-2 text-sm font-medium">Supplier</span>
-			<select class="h-auto" bind:value={supplierName}>
-				<option />
-				{#await getVendors(true) then ss}
-					{#each Object.keys(ss).sort() as s}
-						<option>{s}</option>
-					{/each}
-				{/await}
-			</select>
+		<h3>Order</h3>
+		<div class=" max-w-xl">
+			<div class="grid grid-cols-3 items-center gap-x-2">
+				<div class="col-span-2 flex items-center gap-x-2">
+					<Textbox label="Quantity" type="number" bind:value={quantity} />
+					×
+					<Textbox label="Unit Price" type="number" bind:value={unitPrice} />
+					=
+				</div>
+				<span class="text-xl font-medium">
+					{usd(Number(quantity) * Number(unitPrice))
+						? usd(Number(quantity) * Number(unitPrice))
+						: '$0.00'}
+				</span>
+			</div>
+
+			<Textbox label="Notes" bind:value={notes} />
 		</div>
 
-		<Textbox label="Supplier Cat" bind:value={supplierCat} />
-		<Textbox label="Order Confirmation" bind:value={confirmation} />
+		<h3>Rachel</h3>
+		<div class="grid max-w-xl grid-cols-2 gap-x-3">
+			<div class="mb-4 flex flex-col">
+				<span class="mb-2 text-sm font-medium">Grant</span>
+				<select class="h-auto" bind:value={grantName}>
+					{#await getGrants() then grants}
+						<option />
+						{#each grants.sort((a, b) => a[0].localeCompare(b[0])) as grant}
+							<option>{grant[0]}</option>
+						{/each}
+					{/await}
+				</select>
+			</div>
+
+			<div class="flex flex-col">
+				<span class="mb-2 text-sm font-medium">Supplier</span>
+				<select class="h-auto" bind:value={supplierName}>
+					<option />
+					{#await getVendors(true) then ss}
+						{#each Object.keys(ss).sort() as s}
+							<option>{s}</option>
+						{/each}
+					{/await}
+				</select>
+			</div>
+
+			<Textbox label="Supplier Cat" bind:value={supplierCat} />
+			<Textbox label="Order Confirmation" bind:value={confirmation} />
+		</div>
+
+		<button class="button blue max-w-xl" on:click={handleSubmit}>Save</button>
 	</div>
-
-	<button class="button blue max-w-xl" on:click={handleSubmit}>Save</button>
 </div>
 
 <style lang="postcss">
