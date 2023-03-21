@@ -149,13 +149,6 @@
 			await updateRow('orders', toSend);
 		} else {
 			await submitRow('orders', toSend);
-
-			fetch('https://hooks.slack.com/services/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', {
-				method: 'POST',
-				body: JSON.stringify({
-					text: `New order created for ${itemSearch} from ${localStorage.getItem('firstName')}.`
-				})
-			});
 		}
 		dispatch('submit');
 	}
