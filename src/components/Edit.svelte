@@ -64,7 +64,6 @@
 		itemClicked = await getRow('items', c.id);
 		itemSearch = itemClicked.Name ?? '';
 		cat = itemClicked['Cat #'] ?? '';
-		console.log(itemClicked.Vendor);
 
 		vendorName = nullish(itemClicked.Vendor);
 		link = itemClicked.Link ?? '';

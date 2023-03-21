@@ -52,7 +52,7 @@ export type OrderField = {
 	Price: StrNull;
 	'Cat #': StrNull;
 	Link: StrNull;
-	Unit: LinkNull;
+	Unit: StrNull;
 	Requestor: { id: number; value: string };
 	Vendor: LinkNull;
 	Grant: LinkNull;

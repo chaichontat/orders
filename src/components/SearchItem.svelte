@@ -11,7 +11,6 @@
 	export let value = '';
 	export let clicked: ItemField | undefined = undefined;
 	export let type: keyof typeof tables;
-	export let strict = false;
 	export let disabled = false;
 
 	const dispatch = createEventDispatcher();

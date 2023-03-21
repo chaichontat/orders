@@ -3,9 +3,10 @@
 	import { Icon } from '@steeze-ui/svelte-icon';
 	import { onMount } from 'svelte';
 	import { flip } from 'svelte/animate';
-	import { fade, slide } from 'svelte/transition';
+	import { fade, scale } from 'svelte/transition';
 	import Edit from '../../components/Edit.svelte';
 	import Modal from '../../components/Modal.svelte';
+	import TableHeader from '../../components/TableHeader.svelte';
 	import {
 		auth_or_logout,
 		deleteRow,
@@ -25,25 +26,35 @@
 		};
 	});
 
+	function sort(it: typeof items, { column, ascending }: typeof sortedBy) {
+		it.sort((a, b) => {
+			if (ascending) {
+				return nullish(a[column]).localeCompare(nullish(b[column]));
+			} else {
+				return nullish(b[column]).localeCompare(nullish(a[column]));
+			}
+		});
+	}
+
 	// Actual page stuffs
 	let selected: 'requested' | 'ordered' | 'received' = 'requested';
 
 	let checked: boolean[] = [];
 	let clicked: number | undefined | 'new';
-	let first = true;
+	let sortedBy = { column: 'Submitted', ascending: false };
 
-	let resolveItems: () => void;
+	let resolveFirst: () => void;
 	let itemsPromise: Promise<OrderField[]> = new Promise((r) => {
-		resolveItems = r;
+		resolveFirst = r;
 	});
 	let items: OrderField[] = [];
 
 	async function refresh(sel: typeof selected) {
 		items = await getOrders({ view: sel });
-		resolveItems();
+		resolveFirst();
 		let res = await items;
+		sort(items, sortedBy);
 		checked = new Array(res.length).fill(false);
-		first = false;
 	}
 
 	refresh(selected);
@@ -88,7 +99,34 @@
 		>
 	</section>
 	<button class="button blue" on:click={() => (clicked = 'new')}> Add Request </button>
-	<div class="flex-grow" />
+	<!-- <div class="flex-grow" /> -->
+
+	{#if checked.some((c) => c) && selected === 'requested'}
+		<button
+			class="button mr-4 bg-purple-500 text-white transition-colors duration-75 hover:bg-purple-600 focus:ring-purple-300"
+			on:click={async () => {
+				const orderConfirmation = prompt('Order Confirmation #');
+				if (orderConfirmation === null) {
+					return;
+				} else if (orderConfirmation === '') {
+					alert('Order Confirmation # cannot be empty');
+					return;
+				}
+
+				for (const [i, item] of (await items).entries()) {
+					if (checked[i]) {
+						await updateRow('orders', {
+							id: item.id,
+							Confirmation: orderConfirmation,
+							'Date Ordered': today()
+						});
+					}
+				}
+				refresh(selected);
+			}}
+			in:scale={{ duration: 150 }}>Mark Ordered</button
+		>
+	{/if}
 
 	{#if checked.some((c) => c) && selected === 'ordered'}
 		<button
@@ -101,7 +139,7 @@
 				}
 				refresh(selected);
 			}}
-			transition:slide>Mark Received</button
+			in:scale={{ duration: 150 }}>Mark Received</button
 		>
 	{/if}
 
@@ -116,14 +154,10 @@
 				}
 				refresh(selected);
 			}}
-			transition:slide>Mark NOT Received</button
+			in:scale={{ duration: 150 }}>Mark NOT Received</button
 		>
 	{/if}
 </nav>
-
-<!--
-<aside class="fixed top-0 left-0 flex h-full w-48 flex-col bg-slate-600">
-</aside> -->
 
 <main class="mt-16 bg-neutral-100">
 	<section class="relative p-4">
@@ -132,7 +166,13 @@
 		>
 			<div class="ml-2 -mr-1 flex-[1]" />
 			<div class="flex-[12]">Item Name</div>
-			<div class="flex-[6]">Vendor</div>
+			<TableHeader
+				class="flex-[6] text-left"
+				name="Vendor"
+				displayName="Manufacturer"
+				bind:sortedBy
+				bind:items
+			/>
 			<div class="flex-[5]">Total</div>
 			<div class="flex-[6]">Grant</div>
 			<div class="flex-[5]">From</div>
@@ -205,9 +245,10 @@
 									{item.Created}
 								{/if}
 							</div>
-							<div
+							<button
 								class="flex-[1]"
 								on:click={async () => {
+									if (!confirm('Are you sure you want to delete this item?')) return;
 									await deleteRow('orders', item.id);
 									refresh(selected);
 								}}
@@ -216,7 +257,7 @@
 									src={XMark}
 									class="h-4 w-4 cursor-pointer stroke-gray-700 stroke-[1.5] hover:stroke-2"
 								/>
-							</div>
+							</button>
 						</div>
 					{/each}
 				</div>
