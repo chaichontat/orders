@@ -30,6 +30,7 @@
 	let itemClicked: ItemField | undefined;
 	let supplierCat = '';
 	let cat = '';
+	let unit = '';
 	let link = '';
 	let notes = '';
 	let confirmation = '';
@@ -50,6 +51,7 @@
 			link = nullish(res.Link);
 			quantity = res.Quantity ?? '';
 			unitPrice = res['Unit Price'] ?? '';
+			unit = res.Unit ?? '';
 			notes = res.Notes ?? '';
 			confirmation = res.Confirmation ?? '';
 			supplierCat = res['Supplier Cat'] ?? '';
@@ -68,8 +70,6 @@
 		link = itemClicked.Link ?? '';
 	}
 
-	console.log(postNameKeys('test'));
-
 	async function handleSubmit() {
 		const grant = (await getGrants()).find((g) => g[0] === grantName);
 
@@ -79,32 +79,37 @@
 		}
 
 		const nameKeys = await getNameKeys();
-		let req =
-			nameKeys[
-				Object.keys(nameKeys).find((k) =>
-					k.includes(localStorage.getItem('firstName') as string)
-				) as string
-			];
 
-		if (!req) {
-			await postNameKeys(localStorage.getItem('firstName') as string);
-			req =
+		const toSend: Record<string, unknown> = {
+			Quantity: quantity,
+			'Unit Price': unitPrice,
+			Unit: unit,
+			Notes: notes,
+			Confirmation: confirmation,
+			Grant: grant ? [grant[1]] : [],
+			'Supplier Cat': supplierCat
+		};
+
+		// Only add requestor if first
+		if (!res?.Requestor) {
+			let req =
 				nameKeys[
 					Object.keys(nameKeys).find((k) =>
 						k.includes(localStorage.getItem('firstName') as string)
 					) as string
 				];
-		}
 
-		const toSend: Record<string, unknown> = {
-			Quantity: quantity,
-			'Unit Price': unitPrice,
-			Notes: notes,
-			Confirmation: confirmation,
-			Grant: grant ? [grant[1]] : [],
-			'Supplier Cat': supplierCat,
-			Requestor: req
-		};
+			if (!req) {
+				await postNameKeys(localStorage.getItem('firstName') as string);
+				req =
+					nameKeys[
+						Object.keys(nameKeys).find((k) =>
+							k.includes(localStorage.getItem('firstName') as string)
+						) as string
+					];
+			}
+			toSend['Requestor'] = req;
+		}
 
 		if (!vendorName) {
 			alert('Please select a vendor');
@@ -245,6 +250,7 @@
 			<div class="grid grid-cols-3 items-center gap-x-2">
 				<div class="col-span-2 flex items-center gap-x-2">
 					<Textbox label="Quantity" type="number" bind:value={quantity} />
+					<Textbox label="Unit" type="text" bind:value={unit} />
 					×
 					<Textbox label="Unit Price" type="number" bind:value={unitPrice} />
 					=
@@ -277,7 +283,7 @@
 				<span class="mb-2 text-sm font-medium">Supplier</span>
 				<select class="h-auto" bind:value={supplierName}>
 					<option />
-					{#await getVendors(true) then ss}
+					{#await getVendors() then ss}
 						{#each Object.keys(ss).sort() as s}
 							<option>{s}</option>
 						{/each}
