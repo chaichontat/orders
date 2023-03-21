@@ -32,10 +32,15 @@
 	let clicked: number | undefined | 'new';
 	let first = true;
 
-	let items: Promise<OrderField[]> = new Promise(() => {});
+	let resolveItems: () => void;
+	let itemsPromise: Promise<OrderField[]> = new Promise((r) => {
+		resolveItems = r;
+	});
+	let items: OrderField[] = [];
 
 	async function refresh(sel: typeof selected) {
-		items = getOrders({ view: sel });
+		items = await getOrders({ view: sel });
+		resolveItems();
 		let res = await items;
 		checked = new Array(res.length).fill(false);
 		first = false;
@@ -143,21 +148,19 @@
 			<div class="flex-[1]" />
 		</div>
 
-		{#await items}
-			{#if first}
-				<div
-					class="absolute left-1/2 mt-4 flex -translate-x-1/2 flex-col items-center justify-center text-center leading-relaxed"
-					out:fade
-				>
-					<span class="animate-pulse text-3xl font-extralight tracking-wider"> Loading. </span>
-				</div>
-			{/if}
-		{:then resolved}
-			{#if resolved.length}
+		{#await itemsPromise}
+			<div
+				class="absolute left-1/2 mt-4 flex -translate-x-1/2 flex-col items-center justify-center text-center leading-relaxed"
+				out:fade
+			>
+				<span class="animate-pulse text-3xl font-extralight tracking-wider"> Loading. </span>
+			</div>
+		{:then}
+			{#if items.length}
 				<div
 					class="listing flex min-w-min flex-grow flex-col overflow-hidden rounded-lg border text-sm text-gray-700"
 				>
-					{#each resolved as item, i (item.id)}
+					{#each items as item, i (item.id)}
 						<div
 							class="row flex flex-shrink-0 items-center justify-between gap-x-3 py-5 px-1 pr-3"
 							transition:fade={{ duration: 200 }}
