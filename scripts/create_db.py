@@ -4,10 +4,10 @@ from concurrent.futures import ThreadPoolExecutor
 import requests
 from utils import check_dupe, check_resp, list_rows
 
-url = ""
-group_id = float("inf")
-username = ""
-password = ""
+url = "https://baserow.gofflab.org"
+group_id = 84
+username = "chaichontat.s@gmail.com"
+password = "relic-formosan-helm-riel-WORKABLE"
 timezone = "America/New_York"
 
 
@@ -152,6 +152,7 @@ order_fields = [
         "number_negative": False,
     },
     {"name": "Confirmation", "type": "text", "text_default": ""},
+    {"name": "Unit", "type": "text", "text_default": ""},
     {
         "name": "Quantity",
         "type": "number",
@@ -230,12 +231,6 @@ lookup_items = [
         "type": "lookup",
         "through_field_id": fields_id["orders"]["Item"],
         "target_field_id": fields_id["items"]["Link"],
-    },
-    {
-        "name": "Unit",
-        "type": "lookup",
-        "through_field_id": fields_id["orders"]["Item"],
-        "target_field_id": fields_id["items"]["Unit"],
     },
     {
         "name": "Vendor",
