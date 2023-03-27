@@ -21,13 +21,15 @@
 
 		items.sort((a, b) => {
 			if (sortedBy.ascending) {
-				return nullish(a[name]).localeCompare(nullish(b[name]));
+				return nullish(a[name]).toLowerCase().localeCompare(nullish(b[name]).toLowerCase());
 			} else {
-				return nullish(b[name]).localeCompare(nullish(a[name]));
+				return nullish(b[name]).toLowerCase().localeCompare(nullish(a[name]).toLowerCase());
 			}
 		});
 		items = items;
 	}}
 >
-	{displayName ?? name}
+	<span class:font-semibold={sortedBy.column === name}>
+		{displayName ?? name}
+	</span>
 </button>

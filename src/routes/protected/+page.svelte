@@ -34,14 +34,23 @@
 				return nullish(b[column]).localeCompare(nullish(a[column]));
 			}
 		});
+
+		return it;
 	}
 
 	// Actual page stuffs
 	let selected: 'requested' | 'ordered' | 'received' = 'requested';
+	let sortedBy = { column: 'Created', ascending: false };
+	$: if (selected === 'requested') {
+		sortedBy = { column: 'Created', ascending: false };
+	} else if (selected === 'ordered') {
+		sortedBy = { column: 'Date Ordered', ascending: false };
+	} else if (selected === 'received') {
+		sortedBy = { column: 'Date Received', ascending: false };
+	}
 
 	let checked: boolean[] = [];
 	let clicked: number | undefined | 'new';
-	let sortedBy = { column: 'Submitted', ascending: false };
 
 	let resolveFirst: () => void;
 	let itemsPromise: Promise<OrderField[]> = new Promise((r) => {
@@ -53,13 +62,14 @@
 		items = await getOrders({ view: sel });
 		resolveFirst();
 		let res = await items;
-		sort(items, sortedBy);
+		items = sort(items, sortedBy);
 		checked = new Array(res.length).fill(false);
 	}
 
 	refresh(selected);
 
 	$: refresh(selected);
+	$: items = sort(items, sortedBy);
 </script>
 
 <svelte:head>
@@ -165,7 +175,7 @@
 			class="header text-semibold flex h-8 flex-shrink-0 items-center justify-between gap-x-3 px-1 pr-3 text-xs"
 		>
 			<div class="ml-2 -mr-1 flex-[1]" />
-			<div class="flex-[12]">Item Name</div>
+			<TableHeader class="flex-[12] text-left" name="Item" bind:sortedBy bind:items />
 			<TableHeader
 				class="flex-[6] text-left"
 				name="Vendor"
@@ -175,7 +185,23 @@
 			/>
 			<div class="flex-[5]">Total</div>
 			<div class="flex-[6]">Grant</div>
-			<div class="flex-[5]">From</div>
+			<TableHeader class="flex-[5] text-left" name="Requestor" bind:sortedBy bind:items />
+			<TableHeader
+				class="flex-[4] text-left"
+				name={selected === 'ordered'
+					? 'Date Ordered'
+					: selected === 'received'
+					? 'Date Received'
+					: 'Created'}
+				displayName={selected === 'ordered'
+					? 'Ordered'
+					: selected === 'received'
+					? 'Received'
+					: 'Submitted'}
+				bind:sortedBy
+				bind:items
+			/>
+			<!--
 			<div class="flex-[4]">
 				{#if selected === 'ordered'}
 					Ordered
@@ -184,7 +210,7 @@
 				{:else}
 					Submitted
 				{/if}
-			</div>
+			</div> -->
 			<div class="flex-[1]" />
 		</div>
 

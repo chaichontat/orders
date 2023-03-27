@@ -14,7 +14,10 @@ export function usd(value: number | string | null): string {
 	return value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 }
 
-export function nullish(value: { id: number; value: string }[] | null): string {
+export function nullish(value: { id: number; value: string }[] | null | string): string {
+	if (typeof value === 'string') {
+		return value;
+	}
 	return !value ? '' : value[0]?.value ?? '';
 }
 
