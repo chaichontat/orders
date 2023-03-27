@@ -168,6 +168,14 @@ order_fields = [
         "timezone": timezone,
     },
     {
+        "name": "Date Created",
+        "type": "last_modified",
+        "date_format": "ISO",
+        "date_include_time": True,
+        "date_time_format": "24",
+        "timezone": timezone,
+    },
+    {
         "name": "Date Ordered",
         "type": "date",
         "date_format": "ISO",
@@ -214,6 +222,8 @@ order_fields = [
         "has_related_field": True,
         "link_row_table_id": newTables["vendors"],
     },
+    {"name": "Received By", "type": "text", "text_default": ""},
+    {"name": "Location", "type": "text", "text_default": ""},
 ]
 fields_id["orders"] = {
     f["name"]: post_field(newTables["orders"], **f) for f in order_fields
