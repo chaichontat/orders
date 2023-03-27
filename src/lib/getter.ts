@@ -3,6 +3,7 @@ import { goto } from '$app/navigation';
 import {
 	PUBLIC_BASEROW_URL,
 	PUBLIC_GRANTS_TABLE,
+	PUBLIC_HOOKS_TABLE,
 	PUBLIC_ITEMS_TABLE,
 	PUBLIC_ORDERS_TABLE,
 	PUBLIC_VENDORS_TABLE
@@ -20,14 +21,17 @@ export const tables = {
 	orders: PUBLIC_ORDERS_TABLE,
 	vendors: PUBLIC_VENDORS_TABLE,
 	items: PUBLIC_ITEMS_TABLE,
-	grants: PUBLIC_GRANTS_TABLE
+	grants: PUBLIC_GRANTS_TABLE,
+	hooks: PUBLIC_HOOKS_TABLE
 };
 const fields: Record<keyof typeof tables, Record<string, string>> = {
 	orders: {},
 	vendors: {},
 	items: {},
-	grants: {}
+	grants: {},
+	hooks: {}
 };
+
 let nameKey: Record<string, number> = {};
 
 const views = { requested: null, ordered: null, received: null };
