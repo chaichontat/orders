@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 	import { flip } from 'svelte/animate';
 	import { fade, scale } from 'svelte/transition';
+	import Button from '../../components/Button.svelte';
 	import Edit from '../../components/Edit.svelte';
 	import Modal from '../../components/Modal.svelte';
 	import TableHeader from '../../components/TableHeader.svelte';
@@ -142,9 +143,15 @@
 		<button
 			class="button mr-4 bg-purple-500 text-white transition-colors duration-75 hover:bg-purple-600 focus:ring-purple-300"
 			on:click={async () => {
+				const location = prompt('Receiving location');
 				for (const [i, item] of (await items).entries()) {
 					if (checked[i]) {
-						await updateRow('orders', { id: item.id, 'Date Received': today() });
+						await updateRow('orders', {
+							id: item.id,
+							'Date Received': today(),
+							'Received By': localStorage.getItem('firstName'),
+							Location: location
+						});
 					}
 				}
 				refresh(selected);
@@ -184,7 +191,12 @@
 				bind:items
 			/>
 			<div class="flex-[5]">Total</div>
-			<div class="flex-[6]">Grant</div>
+			<TableHeader
+				class="flex-[6] text-left"
+				name={selected === 'received' ? 'Received By' : 'Grant'}
+				bind:sortedBy
+				bind:items
+			/>
 			<TableHeader class="flex-[5] text-left" name="Requestor" bind:sortedBy bind:items />
 			<TableHeader
 				class="flex-[4] text-left"
@@ -201,16 +213,6 @@
 				bind:sortedBy
 				bind:items
 			/>
-			<!--
-			<div class="flex-[4]">
-				{#if selected === 'ordered'}
-					Ordered
-				{:else if selected === 'received'}
-					Received
-				{:else}
-					Submitted
-				{/if}
-			</div> -->
 			<div class="flex-[1]" />
 		</div>
 
@@ -256,8 +258,13 @@
 									{`${usd(item['Unit Price'])} × ${item['Quantity']} `}
 								</div>
 							</div>
-							<div class="flex-[6] text-ellipsis whitespace-nowrap text-xs text-neutral-500">
-								{nullish(item['Grant'])}
+							<div class="flex-[6] text-ellipsis whitespace-nowrap">
+								{#if selected === 'received'}
+									{nullish(item['Received By'])}<br />
+									<span class="text-xs text-neutral-500">{nullish(item['Location'])}</span>
+								{:else}
+									<span class="text-xs text-neutral-500">{nullish(item['Grant'])}</span>
+								{/if}
 							</div>
 							<div class="flex-[5] text-neutral-600">
 								{item['Requestor'] ? item['Requestor'].value : ''}
@@ -312,36 +319,6 @@
 	{/if}
 </Modal>
 
-<!-- <Transition
-	show={isOpen}
-	enter="transition duration-100 ease-out"
-	enterFrom="transform scale-95 opacity-0"
-	enterTo="transform scale-100 opacity-100"
-	leave="transition duration-75 ease-out"
-	leaveFrom="transform scale-100 opacity-100"
-	leaveTo="transform scale-95 opacity-0"
->
-	<Dialog open={isOpen} on:close={() => (isOpen = false)}>
-		<DialogOverlay
-			style={'position: fixed; top: 0; left: 0; background-color: rgb(0 0 0); opacity: 0.3;'}
-		/>
-
-		<span class="inline-block h-screen align-middle" aria-hidden="true">​</span>
-		<div
-			class="my-8 inline-block w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all"
-		>
-			<DialogTitle>Deactivate account</DialogTitle>
-			<DialogDescription>This will permanently deactivate your account</DialogDescription>
-			<p>
-				Are you sure you want to deactivate your account? All of your data will be permanently
-				removed. This action cannot be undone.
-			</p>
-
-			<button on:click={() => (isOpen = false)}>Deactivate</button>
-			<button on:click={() => (isOpen = false)}>Cancel</button>
-		</div>
-	</Dialog>
-</Transition> -->
 <style lang="postcss">
 	tr:nth-child(even) {
 		@apply bg-white hover:bg-neutral-50;
