@@ -4,8 +4,8 @@
 	import { onMount } from 'svelte';
 	import Textbox from '../components/Textbox.svelte';
 
-	onMount(() => {
-		auth_or_logout(false);
+	onMount(async () => {
+		if (await auth_or_logout(false)) goto('/protected')
 	});
 
 	function handleSubmit(ev: SubmitEvent) {
